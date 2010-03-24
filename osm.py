@@ -17,20 +17,25 @@
 
 from __future__ import print_function
 import sys
-sys.path.append("osm_lib/OsmApi")
 from OsmApi import OsmApi
 
 api = OsmApi(debug = True)
 
-def Map(lat, lon, dist = 0.0125):
-    return api.Map(lat - dist, lon - dist, lat + dist, lon + dist)
+def mapGet(lat, lon, dist = 0.0125):
+    return api.Map(lon - dist, lat - dist, lon + dist, lat + dist)
+
+def nodeGet(id):
+    return api.NodeGet(id)
+
+def wayGet(id):
+    return api.WayGet(id)
 
 usage = """Usage:
 osm.py map <lat> <lon> [<dist>]
 """
 
 def main():
-    if sys.argv[1] == "map" and len(sys.argv) >= 4:
+    if len(sys.argv) >= 4 and sys.argv[1] == "map":
         if len(sys.argv) == 4:
             m = Map(float(sys.argv[2]), float(sys.argv[3]))
         else:

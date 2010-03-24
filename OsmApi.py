@@ -571,8 +571,8 @@ class OsmApi:
     def _http_request(self, cmd, path, auth, send):
         if self._debug:
             path2 = path
-            if len(path2) > 50:
-                path2 = path2[:50]+"[...]"
+#            if len(path2) > 50:
+#                path2 = path2[:50]+"[...]"
             print >>sys.stderr, "%s %s %s"%(time.strftime("%Y-%m-%d %H:%M:%S"),cmd,path2)
         self._conn.putrequest(cmd, path)
         self._conn.putheader('User-Agent', self._created_by)

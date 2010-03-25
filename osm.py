@@ -36,37 +36,40 @@ osm.py map <lat> <lon> [<dist>]
 
 def main():
     if len(sys.argv) >= 4 and sys.argv[1] == "map":
-        if len(sys.argv) == 4:
-            m = Map(float(sys.argv[2]), float(sys.argv[3]))
-        else:
-            m = Map(float(sys.argv[2]), float(sys.argv[3]), float(sys.argv[4]))
-        
-        nodeMap = dict()
-        for i in m:
-            if i['type'] == "node":
-                nodeMap[i['data']['id']] = i
-        
-        wayMap = dict()        
-        for i in m:
-            type = i['type']
-            data = i['data']
-            if type == "way":
-                nd = data['nd']
-                for j in nd:
-                    if j in nodeMap:
-                        if not wayMap.has_key(j):
-                            wayMap[j] = list()
-                        if not data['tag'].has_key('name'):
-                            print(data)
-                            data['tag']['name'] = data['tag']['highway'] + ' road #' + str(data['id'])
-                        else:
-                            wayMap[j].append(i)
-      
-        for i in wayMap.keys():
-            print(i, ": ", end='')
-            print([w['data']['tag']['name'] for w in wayMap[i]], sep='')
+        mapcmd(sys.argv)
     else:
         print (usage)
+
+def mapcmd(argv):
+   if len(argv) == 4:
+        m = mapGet(float(argv[2]), float(argv[3]))
+   else:
+        m = mapGet(float(argv[2]), float(argv[3]), float(argv[4]))
+
+   nodeMap = dict()
+   for i in m:
+       if i['type'] == "node":
+           nodeMap[i['data']['id']] = i
+    
+   wayMap = dict()        
+   for i in m:
+       type = i['type']
+       data = i['data']
+       if type == "way":
+           nd = data['nd']
+           for j in nd:
+               if j in nodeMap:
+                   if not wayMap.has_key(j):
+                       wayMap[j] = list()
+                   if not data['tag'].has_key('name'):
+                       print(data)
+                       data['tag']['name'] = data['tag']['highway'] + ' road #' + str(data['id'])
+                   else:
+                       wayMap[j].append(i)
+    
+   for i in wayMap.keys():
+       print(i, " (", nodeMap[i]['data']['lat'], ", ", nodeMap[i]['data']['lon'], "): ", sep='', end='')
+       print([w['data']['tag']['name'] for w in wayMap[i]], sep='')
 
 
 if __name__ == "__main__":

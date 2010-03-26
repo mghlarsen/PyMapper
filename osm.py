@@ -19,9 +19,13 @@ from __future__ import print_function
 import sys
 from OsmApi import OsmApi
 
-api = OsmApi(debug = True)
+DEBUG = True
+
+api = OsmApi(debug = DEBUG)
 
 def mapGet(lat, lon, dist = 0.0125):
+    if DEBUG:
+        print("lat: %s lon: %s dist: %s" % (lat, lon, dist))
     return api.Map(lon - dist, lat - dist, lon + dist, lat + dist)
 
 def nodeGet(id):
@@ -68,7 +72,9 @@ def mapcmd(argv):
                        wayMap[j].append(i)
     
    for i in wayMap.keys():
-       print(i, " (", nodeMap[i]['data']['lat'], ", ", nodeMap[i]['data']['lon'], "): ", sep='', end='')
+       print("%d (%s, %s): " % 
+             (i, nodeMap[i]['data']['lat'], nodeMap[i]['data']['lon']), 
+             end = '') 
        print([w['data']['tag']['name'] for w in wayMap[i]], sep='')
 
 

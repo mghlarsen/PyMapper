@@ -26,12 +26,32 @@ api = OsmApi(debug = DEBUG)
 
 nodes = dict()
 ways = dict()
+relations = dict()
 nodeWays = dict()
 
 def mapGet(lat, lon, dist = 0.0125):
     if DEBUG:
         print("lat: %s lon: %s dist: %s" % (lat, lon, dist))
-    return api.Map(lon - dist, lat - dist, lon + dist, lat + dist)
+    m = api.Map(lon - dist, lat - dist, lon + dist, lat + dist)     
+    for i in m:
+       data = i['data']
+       id = int(data['id'])
+       ver = int(data['version'])
+       type = i['type']
+       if (type == 'node') and ((not id in nodes) or (ver > int(nodes[id]['version']))):
+           nodes[id] = data
+       elif (type == 'way') and ((not id in ways) or (ver > int(ways[id]['version']))):
+           ways[id] = data
+           for nid in data['nd']:
+               nodeID = int(nid)
+               if nodeID in nodeWays:
+                   nodeWays[nodeID].append(id)
+               else:
+                   nodeWays[nodeID] = [id]
+       elif type == 'relation': 
+           if ((not id in relations) or (ver > int(relations[id]['version']))):
+               relations[id] = data
+    return m
 
 def nodeGet(id):
     if not id in nodes: nodes[id] = api.NodeGet(id) 
@@ -78,14 +98,12 @@ def mapcmd(argv):
            nd = data['nd']
            for j in nd:
                if j in nodeMap:
-                   if not wayMap.has_key(j):
+                   if not j in wayMap:
                        wayMap[j] = list()
-                   if not data['tag'].has_key('name'):
-                       print(data)
-                       data['tag']['name'] = data['tag']['highway'] + ' road #' + str(data['id'])
-                   else:
+                   if 'name' in data['tag']:
                        wayMap[j].append(i)
-    
+                   elif 'highway' in data['tag']:
+                       data['tag']['name'] = data['tag']['highway'] + ' road #' + str(data['id'])      
    for i in wayMap.keys():
        print("%d (%s, %s): " % 
              (i, nodeMap[i]['data']['lat'], nodeMap[i]['data']['lon']), 

@@ -35,6 +35,9 @@ def nodeGet(id):
 def wayGet(id):
     return api.WayGet(id)
 
+def nodeWayGet(id):
+    return api.NodeWays(id)
+
 usage = """Usage:
 osm.py map <lat> <lon> [<dist>]
 """

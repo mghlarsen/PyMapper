@@ -24,19 +24,30 @@ DEBUG = True
 
 api = OsmApi(debug = DEBUG)
 
+nodes = dict()
+ways = dict()
+nodeWays = dict()
+
 def mapGet(lat, lon, dist = 0.0125):
     if DEBUG:
         print("lat: %s lon: %s dist: %s" % (lat, lon, dist))
     return api.Map(lon - dist, lat - dist, lon + dist, lat + dist)
 
 def nodeGet(id):
-    return api.NodeGet(id)
+    if not id in nodes: nodes[id] = api.NodeGet(id) 
+    return nodes[id]
 
 def wayGet(id):
-    return api.WayGet(id)
+    if not id in ways: ways[id] = api.WayGet(id) 
+    return ways[id]
 
 def nodeWayGet(id):
-    return api.NodeWays(id)
+    if not id in nodeWays:
+        ways = api.NodeWays(id)
+        for i in xrange(len(ways)):
+            ways[i] = int(ways[i]['id'])
+        nodeWays[id] = ways
+    return nodeWays[id]
 
 usage = """Usage:
 osm.py map <lat> <lon> [<dist>]

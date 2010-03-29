@@ -20,6 +20,70 @@ from __future__ import print_function
 import sys
 from OsmApi import OsmApi
 
+class Node:
+    def __init__(self, element):
+        attr = element.attributes
+        self.id = int(attr['id'].nodeValue)
+        self.lat = float(attr['lat'].nodeValue)
+        self.lon = float(attr['lon'].nodeValue)
+        self.version = int(attr['version'].nodeValue)
+        self.timestamp = attr['timestamp'].nodeValue
+        self.changeSet = int(attr['changeset'].nodeValue)
+        self.uid = int(attr['uid'].nodeValue)
+        self.user = attr['user'].nodeValue
+        tagElements = element.getElementsByTagName("tag")
+        self.tags = dict()
+        for e in tagElements:
+            self.tags[e.attributes['k'].nodeValue] = e.attributes['v'].nodeValue
+    
+    def __repr__(self):
+        return "<Node id:%(id)s lat:%(lat)s lon:%(lon)s>" %  {
+            'id':self.id, 'lat':self.lat, 'lon':self.lon, 'tags':self.tags}
+
+class Way:
+    def __init__(self, element):
+        attr = element.attributes
+        self.id = int(attr['id'].nodeValue)
+        self.visible = attr['visible'].nodeValue == u'true'
+        self.version = int(attr['version'].nodeValue)
+        self.timestamp = attr['timestamp'].nodeValue
+        self.changeSet = int(attr['changeset'].nodeValue)
+        self.uid = int(attr['uid'].nodeValue)
+        self.user = attr['user'].nodeValue
+        tagElements = element.getElementsByTagName("tag")
+        self.tags = dict()
+        for e in tagElements:
+            self.tags[e.attributes['k'].nodeValue] = e.attributes['v'].nodeValue
+    
+    def __repr__(self):
+        return "<Way id:%(id)s>" % {'id':self.id, 'tags':self.tags}
+
+class Relation:
+    class Member:
+        def __init__(self, element):
+            attr = element.attributes
+            self.type = attr["type"].nodeValue
+            self.ref = int(attr["ref"].nodeValue)
+            self.role = attr["role"].nodeValue
+    
+    def __init__(self, element):
+        attr = element.attributes
+        self.id = int(attr['id'].nodeValue)
+        self.visible = attr['visible'].nodeValue == u'true'
+        self.version = int(attr['version'].nodeValue)
+        self.timestamp = attr['timestamp'].nodeValue
+        self.changeSet = int(attr['changeset'].nodeValue)
+        self.uid = int(attr['uid'].nodeValue)
+        self.user = attr['user'].nodeValue
+        tagElements = element.getElementsByTagName("tag")
+        self.tags = dict()
+        for e in tagElements:
+            self.tags[e.attributes['k'].nodeValue] = e.attributes['v'].nodeValue
+        self.members = [Relation.Member(e) for e in element.getElementsByTagName("member")]
+    
+    def __repr__(self):
+        return "<Way id:%(id)s>" % {'id':self.id}
+
 DEBUG = True
 
 api = OsmApi(debug = DEBUG)

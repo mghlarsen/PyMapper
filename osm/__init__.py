@@ -21,7 +21,13 @@ import sys
 from OsmApi import OsmApi
 
 class Node:
-    def __init__(self, element):
+    def __init__(self, *args):
+        if len(args) == 1:
+            self.__from_element(args[0])
+        elif len(args) == 3:
+            self.__from_data(args[0], args[1], args[2])
+
+    def __from_element(self, element):
         attr = element.attributes
         self.id = int(attr['id'].nodeValue)
         self.lat = float(attr['lat'].nodeValue)
@@ -36,15 +42,25 @@ class Node:
         for e in tagElements:
             self.tags[e.attributes['k'].nodeValue] = e.attributes['v'].nodeValue
     
+    def __from_data(self, id, fields, tags):
+        self.id = id
+        self.lat, self.lon, self.version, self.timestamp, self.changeset, self.uid, self.user = fields
+        self.tags = tags
+    
     def __repr__(self):
         return "<Node id:%(id)s lat:%(lat)s lon:%(lon)s>" %  {
             'id':self.id, 'lat':self.lat, 'lon':self.lon, 'tags':self.tags}
 
 class Way:
-    def __init__(self, element):
+    def __init__(self, *args):
+        if len(args) == 1:
+            self.__from_element(*args)
+        elif len(args) == 4:
+            self.__from_data(*args)
+    
+    def __from_element(self, element):
         attr = element.attributes
         self.id = int(attr['id'].nodeValue)
-        self.visible = attr['visible'].nodeValue == u'true'
         self.version = int(attr['version'].nodeValue)
         self.timestamp = attr['timestamp'].nodeValue
         self.changeset = int(attr['changeset'].nodeValue)
@@ -56,21 +72,43 @@ class Way:
             self.tags[e.attributes['k'].nodeValue] = e.attributes['v'].nodeValue
         self.nodes = [int(nd.attributes['ref'].nodeValue) for nd in element.getElementsByTagName("nd")]
     
+    def __from_data(self, id, fields, tags, nodes):
+        self.id = id
+        self.version, self.timestamp, self.changeset, self.uid, self.user = fields
+        self.tags = tags
+        self.nodes = nodes
+    
     def __repr__(self):
         return "<Way id:%(id)s>" % {'id':self.id, 'tags':self.tags}
 
 class Relation:
     class Member:
-        def __init__(self, element):
+        def __init__(self, *args):
+            if len(args) == 1:
+                self.__from_element(*args)
+            elif len(args) == 3:
+                self.__from_data(*args)
+        
+        def __from_element(self, element):
             attr = element.attributes
             self.type = attr["type"].nodeValue
             self.ref = int(attr["ref"].nodeValue)
             self.role = attr["role"].nodeValue
+        
+        def __from_data(self, role, type, ref):
+            self.role = role
+            self.type = type
+            self.ref = ref
+        
+    def __init__(self, *args):
+        if len(args) == 1:
+            self.__from_element(*args)
+        elif len(args) == 4:
+            self.__from_data(*args)
     
-    def __init__(self, element):
+    def __from_element(self, element):
         attr = element.attributes
         self.id = int(attr['id'].nodeValue)
-        self.visible = attr['visible'].nodeValue == u'true'
         self.version = int(attr['version'].nodeValue)
         self.timestamp = attr['timestamp'].nodeValue
         self.changeset = int(attr['changeset'].nodeValue)
@@ -81,6 +119,12 @@ class Relation:
         for e in tagElements:
             self.tags[e.attributes['k'].nodeValue] = e.attributes['v'].nodeValue
         self.members = [Relation.Member(e) for e in element.getElementsByTagName("member")]
+    
+    def __from_data(self, id, fields, tags, members):
+        self.id = id
+        self.version, self.timestamp, self.changeset, self.uid, self.user = fields
+        self.tags = tags
+        self.members = [Relation.Member(m[0], m[1], m[2]) for m in members]
     
     def __repr__(self):
         return "<Relation id:%(id)s>" % {'id':self.id}

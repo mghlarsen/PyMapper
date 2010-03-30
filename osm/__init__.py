@@ -28,7 +28,7 @@ class Node:
         self.lon = float(attr['lon'].nodeValue)
         self.version = int(attr['version'].nodeValue)
         self.timestamp = attr['timestamp'].nodeValue
-        self.changeSet = int(attr['changeset'].nodeValue)
+        self.changeset = int(attr['changeset'].nodeValue)
         self.uid = int(attr['uid'].nodeValue)
         self.user = attr['user'].nodeValue
         tagElements = element.getElementsByTagName("tag")
@@ -47,13 +47,14 @@ class Way:
         self.visible = attr['visible'].nodeValue == u'true'
         self.version = int(attr['version'].nodeValue)
         self.timestamp = attr['timestamp'].nodeValue
-        self.changeSet = int(attr['changeset'].nodeValue)
+        self.changeset = int(attr['changeset'].nodeValue)
         self.uid = int(attr['uid'].nodeValue)
         self.user = attr['user'].nodeValue
         tagElements = element.getElementsByTagName("tag")
         self.tags = dict()
         for e in tagElements:
             self.tags[e.attributes['k'].nodeValue] = e.attributes['v'].nodeValue
+        self.nodes = [int(nd.attributes['ref'].nodeValue) for nd in element.getElementsByTagName("nd")]
     
     def __repr__(self):
         return "<Way id:%(id)s>" % {'id':self.id, 'tags':self.tags}
@@ -72,7 +73,7 @@ class Relation:
         self.visible = attr['visible'].nodeValue == u'true'
         self.version = int(attr['version'].nodeValue)
         self.timestamp = attr['timestamp'].nodeValue
-        self.changeSet = int(attr['changeset'].nodeValue)
+        self.changeset = int(attr['changeset'].nodeValue)
         self.uid = int(attr['uid'].nodeValue)
         self.user = attr['user'].nodeValue
         tagElements = element.getElementsByTagName("tag")
@@ -82,7 +83,7 @@ class Relation:
         self.members = [Relation.Member(e) for e in element.getElementsByTagName("member")]
     
     def __repr__(self):
-        return "<Way id:%(id)s>" % {'id':self.id}
+        return "<Relation id:%(id)s>" % {'id':self.id}
 
 DEBUG = True
 

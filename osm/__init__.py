@@ -18,38 +18,8 @@
 
 from __future__ import print_function
 import sys
+from osm.node import Node
 from OsmApi import OsmApi
-
-class Node:
-    def __init__(self, *args):
-        if len(args) == 1:
-            self.__from_element(args[0])
-        elif len(args) == 3:
-            self.__from_data(args[0], args[1], args[2])
-
-    def __from_element(self, element):
-        attr = element.attributes
-        self.id = int(attr['id'].nodeValue)
-        self.lat = float(attr['lat'].nodeValue)
-        self.lon = float(attr['lon'].nodeValue)
-        self.version = int(attr['version'].nodeValue)
-        self.timestamp = attr['timestamp'].nodeValue
-        self.changeset = int(attr['changeset'].nodeValue)
-        self.uid = int(attr['uid'].nodeValue)
-        self.user = attr['user'].nodeValue
-        tagElements = element.getElementsByTagName("tag")
-        self.tags = dict()
-        for e in tagElements:
-            self.tags[e.attributes['k'].nodeValue] = e.attributes['v'].nodeValue
-    
-    def __from_data(self, id, fields, tags):
-        self.id = id
-        self.lat, self.lon, self.version, self.timestamp, self.changeset, self.uid, self.user = fields
-        self.tags = tags
-    
-    def __repr__(self):
-        return "<Node id:%(id)s lat:%(lat)s lon:%(lon)s>" %  {
-            'id':self.id, 'lat':self.lat, 'lon':self.lon, 'tags':self.tags}
 
 class Way:
     def __init__(self, *args):

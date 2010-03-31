@@ -20,55 +20,8 @@ from __future__ import print_function
 import sys
 from osm.node import Node
 from osm.way import Way
+from osm.relation import Relation
 from OsmApi import OsmApi
-
-class Relation:
-    class Member:
-        def __init__(self, *args):
-            if len(args) == 1:
-                self.__from_element(*args)
-            elif len(args) == 3:
-                self.__from_data(*args)
-        
-        def __from_element(self, element):
-            attr = element.attributes
-            self.type = attr["type"].nodeValue
-            self.ref = int(attr["ref"].nodeValue)
-            self.role = attr["role"].nodeValue
-        
-        def __from_data(self, role, type, ref):
-            self.role = role
-            self.type = type
-            self.ref = ref
-        
-    def __init__(self, *args):
-        if len(args) == 1:
-            self.__from_element(*args)
-        elif len(args) == 4:
-            self.__from_data(*args)
-    
-    def __from_element(self, element):
-        attr = element.attributes
-        self.id = int(attr['id'].nodeValue)
-        self.version = int(attr['version'].nodeValue)
-        self.timestamp = attr['timestamp'].nodeValue
-        self.changeset = int(attr['changeset'].nodeValue)
-        self.uid = int(attr['uid'].nodeValue)
-        self.user = attr['user'].nodeValue
-        tagElements = element.getElementsByTagName("tag")
-        self.tags = dict()
-        for e in tagElements:
-            self.tags[e.attributes['k'].nodeValue] = e.attributes['v'].nodeValue
-        self.members = [Relation.Member(e) for e in element.getElementsByTagName("member")]
-    
-    def __from_data(self, id, fields, tags, members):
-        self.id = id
-        self.version, self.timestamp, self.changeset, self.uid, self.user = fields
-        self.tags = tags
-        self.members = [Relation.Member(m[0], m[1], m[2]) for m in members]
-    
-    def __repr__(self):
-        return "<Relation id:%(id)s>" % {'id':self.id}
 
 DEBUG = True
 

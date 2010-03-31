@@ -19,37 +19,8 @@
 from __future__ import print_function
 import sys
 from osm.node import Node
+from osm.way import Way
 from OsmApi import OsmApi
-
-class Way:
-    def __init__(self, *args):
-        if len(args) == 1:
-            self.__from_element(*args)
-        elif len(args) == 4:
-            self.__from_data(*args)
-    
-    def __from_element(self, element):
-        attr = element.attributes
-        self.id = int(attr['id'].nodeValue)
-        self.version = int(attr['version'].nodeValue)
-        self.timestamp = attr['timestamp'].nodeValue
-        self.changeset = int(attr['changeset'].nodeValue)
-        self.uid = int(attr['uid'].nodeValue)
-        self.user = attr['user'].nodeValue
-        tagElements = element.getElementsByTagName("tag")
-        self.tags = dict()
-        for e in tagElements:
-            self.tags[e.attributes['k'].nodeValue] = e.attributes['v'].nodeValue
-        self.nodes = [int(nd.attributes['ref'].nodeValue) for nd in element.getElementsByTagName("nd")]
-    
-    def __from_data(self, id, fields, tags, nodes):
-        self.id = id
-        self.version, self.timestamp, self.changeset, self.uid, self.user = fields
-        self.tags = tags
-        self.nodes = nodes
-    
-    def __repr__(self):
-        return "<Way id:%(id)s>" % {'id':self.id, 'tags':self.tags}
 
 class Relation:
     class Member:

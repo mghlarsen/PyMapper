@@ -1,4 +1,3 @@
-#!/usr/bin/python
 # -*- coding: utf-8 -*-
 
 ## Copyright 2010 Michael Larsen <mike.gh.larsen@gmail.com>
@@ -16,16 +15,12 @@
 ## You should have received a copy of the GNU General Public License     ##
 ## along with this program.  If not, see <http://www.gnu.org/licenses/>. ##
 
-from __future__ import print_function
 import sys
 from osm.node import Node
 from osm.way import Way
 from osm.relation import Relation
-from OsmApi import OsmApi
-
-DEBUG = True
-
-api = OsmApi(debug = DEBUG)
+from osm.fetch import map_get
+from osm.store import data_store
 
 nodes = dict()
 ways = dict()
@@ -34,26 +29,19 @@ nodeWays = dict()
 
 def mapGet(lat, lon, dist = 0.0125):
     if DEBUG:
-        print("lat: %s lon: %s dist: %s" % (lat, lon, dist))
-    m = api.Map(lon - dist, lat - dist, lon + dist, lat + dist)     
+        print "lat: %s lon: %s dist: %s" % (lat, lon, dist)
+    m = map_get(lat - dist, lat + dist, lon - dist, lon + dist)
+    data_store(m)
     for i in m:
-       data = i['data']
-       id = int(data['id'])
-       ver = int(data['version'])
-       type = i['type']
-       if (type == 'node') and ((not id in nodes) or (ver > int(nodes[id]['version']))):
-           nodes[id] = data
-       elif (type == 'way') and ((not id in ways) or (ver > int(ways[id]['version']))):
-           ways[id] = data
-           for nid in data['nd']:
-               nodeID = int(nid)
-               if nodeID in nodeWays:
-                   nodeWays[nodeID].append(id)
-               else:
-                   nodeWays[nodeID] = [id]
-       elif type == 'relation': 
-           if ((not id in relations) or (ver > int(relations[id]['version']))):
-               relations[id] = data
+        if isinstance(i, Node):
+            nodes[i.id] = i
+        elif isinstance(i, Way):
+            ways[i.id] = i
+            for n in i.nodes:
+                if n.in_bbox(lat - dist, lat + dist, lon - dist, lon + dist):
+                    nodeWays[n.id] = nodeWays[n.id] + [i.id]
+        elif isinstance(i, Relation):
+            relations[i.id] = i
     return m
 
 def nodeGet(id):
@@ -80,41 +68,32 @@ def main():
     if len(sys.argv) >= 4 and sys.argv[1] == "map":
         mapcmd(sys.argv)
     else:
-        print (usage)
+        print usage
 
 def mapcmd(argv):
-   if len(argv) == 4:
+    if len(argv) == 4:
         m = mapGet(float(argv[2]), float(argv[3]))
-   else:
+    else:
         m = mapGet(float(argv[2]), float(argv[3]), float(argv[4]))
 
-   nodeMap = dict()
-   for i in m:
-       if i['type'] == "node":
-           nodeMap[i['data']['id']] = i
-    
-   wayMap = dict()        
-   for i in m:
-       type = i['type']
-       data = i['data']
-       if type == "way":
-           nd = data['nd']
-           for j in nd:
+    wayMap = dict()
+    for i in m:
+        if isinstance(i, Way):
+            for j in i.nodes:
                if j in nodeMap:
                    if not j in wayMap:
                        wayMap[j] = list()
-                   if 'name' in data['tag']:
+                   if 'name' in i.tags:
                        wayMap[j].append(i)
-                   elif 'highway' in data['tag']:
-                       data['tag']['name'] = data['tag']['highway'] + ' road #' + str(data['id'])      
-   for i in wayMap.keys():
-       print("%d (%s, %s): " % 
-             (i, nodeMap[i]['data']['lat'], nodeMap[i]['data']['lon']), 
-             end = '') 
-       print([w['data']['tag']['name'] for w in wayMap[i]], sep='')
+                   elif 'highway' in i.tags:
+                       i.tags['name'] = i.tags['highway'] + ' road #' + str(i.id)
+    for i in wayMap.keys():
+        print "%d (%s, %s): " %  (i, nodes[i].tags['lat'], nodeMap[i].tags['lon']),
+        for w in wayMap[i]:
+           print w.tags['name'],
+        print
 
 
 if __name__ == "__main__":
-    print(sys.argv)
+    print sys.argv
     main()
-

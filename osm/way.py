@@ -16,7 +16,6 @@
 ## You should have received a copy of the GNU General Public License     ##
 ## along with this program.  If not, see <http://www.gnu.org/licenses/>. ##
 
-from __future__ import print_function
 
 class Way:
     def __init__(self, *args):
@@ -24,7 +23,7 @@ class Way:
             self.__from_element(*args)
         elif len(args) == 4:
             self.__from_data(*args)
-    
+
     def __from_element(self, element):
         attr = element.attributes
         self.id = int(attr['id'].nodeValue)
@@ -38,12 +37,12 @@ class Way:
         for e in tagElements:
             self.tags[e.attributes['k'].nodeValue] = e.attributes['v'].nodeValue
         self.nodes = [int(nd.attributes['ref'].nodeValue) for nd in element.getElementsByTagName("nd")]
-    
+
     def __from_data(self, id, fields, tags, nodes):
         self.id = id
         self.version, self.timestamp, self.changeset, self.uid, self.user = fields
         self.tags = tags
         self.nodes = nodes
-    
+
     def __repr__(self):
         return "<Way id:%(id)s>" % {'id':self.id, 'tags':self.tags}

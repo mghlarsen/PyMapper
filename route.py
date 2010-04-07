@@ -1,4 +1,3 @@
-#!/usr/bin/python
 # -*- coding: utf-8 -*-
 
 ## Copyright 2010 Michael Larsen <mike.gh.larsen@gmail.com>
@@ -16,7 +15,6 @@
 ## You should have received a copy of the GNU General Public License     ##
 ## along with this program.  If not, see <http://www.gnu.org/licenses/>. ##
 
-from __future__ import print_function
 import osm
 import sys
 import math
@@ -28,19 +26,19 @@ MAX_ITER = 100
 def routeFind(src, dst, queue_max_size = 0):
     srcNode = osm.nodeGet(src)
     dstNode = osm.nodeGet(dst)
-    
+
     toAnalyze = Queue.PriorityQueue(queue_max_size)
     analyzed = dict()
-    
+
     toAnalyze.put((0 + distance(src, dst), src, 0, []))
-    
+
     i = 0
-    
+
     while (not toAnalyze.empty()) and (i < MAX_ITER):
         i += 1
         estDist, curr, currPathDist, path = toAnalyze.get()
-        if DEBUG: print("est:%s curr:%s distance:%s path:%s" 
-              % (estDist, curr, currPathDist, path))
+        if DEBUG:
+            print "est:%s curr:%s distance:%s path:%s" % (estDist, curr, currPathDist, path)
         if curr == dst: return (path, currPathDist)
         if curr in analyzed and currPathDist >= analyzed[curr]:
             continue
@@ -65,7 +63,7 @@ def getAdjacent(nodeID):
                 curr = i
                 break
         if curr == -1: continue
-        
+
         if i > 0: adjacent.append(way['nd'][i - 1])
         if i < len(way['nd']) - 1: adjacent.append(way['nd'][i + 1])
     return adjacent
@@ -84,6 +82,6 @@ route.py <src node #> <dst node #>"""
 
 if __name__ == '__main__':
     if len(sys.argv) < 3:
-        print(usage)
+        print usage
     else:
-        print(routeFind(int(sys.argv[1]), int(sys.argv[2])))
+        print routeFind(int(sys.argv[1]), int(sys.argv[2]))

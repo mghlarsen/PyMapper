@@ -1,4 +1,3 @@
-#!/usr/bin/python
 # -*- coding: utf-8 -*-
 
 ## Copyright 2010 Michael Larsen <mike.gh.larsen@gmail.com>
@@ -15,8 +14,6 @@
 ##                                                                       ##
 ## You should have received a copy of the GNU General Public License     ##
 ## along with this program.  If not, see <http://www.gnu.org/licenses/>. ##
-
-from __future__ import print_function
 
 class Node:
     def __init__(self, *args):
@@ -39,13 +36,15 @@ class Node:
         self.tags = dict()
         for e in tagElements:
             self.tags[e.attributes['k'].nodeValue] = e.attributes['v'].nodeValue
-    
+
     def __from_data(self, id, fields, tags):
         self.id = id
         self.lat, self.lon, self.version, self.timestamp, self.changeset, self.uid, self.user = fields
         self.tags = tags
-    
+   
     def __repr__(self):
         return "<Node id:%(id)s lat:%(lat)s lon:%(lon)s>" %  {
             'id':self.id, 'lat':self.lat, 'lon':self.lon, 'tags':self.tags}
 
+    def in_bbox(self, minLat, maxLat, minLon, maxLon):
+        return (minLat <= self.lat) and (maxLat >= self.lat) and (minLon <= self.lon) and (maxLon >= self.lon)

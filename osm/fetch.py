@@ -1,4 +1,3 @@
-#!/usr/bin/python
 # -*- coding: utf-8 -*-
 
 ## Copyright 2010 Michael Larsen <mike.gh.larsen@gmail.com>
@@ -16,26 +15,24 @@
 ## You should have received a copy of the GNU General Public License     ##
 ## along with this program.  If not, see <http://www.gnu.org/licenses/>. ##
 
-from __future__ import print_function
 from urllib2 import urlopen
 from xml.dom.minidom import parse
 from osm import Node, Way, Relation
 
+DEBUG = True
 DEFAULT_SERVER = "www.openstreetmap.org"
 DEFAULT_API = "0.6"
 
 def extract_data(document):
     osm_node = document.documentElement
     assert osm_node.tagName == u'osm'
-    
+
     nodes = [Node(e) for e in osm_node.getElementsByTagName("node")]
     ways = [Way(e) for e in osm_node.getElementsByTagName("way")]
     relations = [Relation(e) for e in osm_node.getElementsByTagName("relation")]
-    print("nodes:%(nodes)s\nways:%(ways)s\nrelations:%(relations)s\n" % locals())
     return nodes + ways + relations
 
 def map_get(minLat, maxLat, minLon, maxLon, server = DEFAULT_SERVER, api = DEFAULT_API):
-    print("map?bbox=%(minLon)s,%(minLat)s,%(maxLon)s,%(maxLat)s" % locals())
     doc = fetch("map?bbox=%(minLon)s,%(minLat)s,%(maxLon)s,%(maxLat)s" % locals(), server, api)
     return extract_data(doc)
 
@@ -52,11 +49,10 @@ def node_get(id, server = DEFAULT_SERVER, api = DEFAULT_API):
     return extract_data(doc)
 
 def fetch(methodStr, server = DEFAULT_SERVER, api = DEFAULT_API):
-    print("fetching http://%(server)s/api/%(api)s/%(methodStr)s" % locals())
+    if DEBUG:
+        print "fetching http://%(server)s/api/%(api)s/%(methodStr)s" % locals()
     results = urlopen("http://%(server)s/api/%(api)s/%(methodStr)s" % locals())
-    print("url: ", results.geturl())
-    print("info: ", results.info())
-    
+
     return parse(results)
 
 res = None

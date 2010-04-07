@@ -1,4 +1,3 @@
-#!/usr/bin/python
 # -*- coding: utf-8 -*-
 
 ## Copyright 2010 Michael Larsen <mike.gh.larsen@gmail.com>
@@ -16,7 +15,6 @@
 ## You should have received a copy of the GNU General Public License     ##
 ## along with this program.  If not, see <http://www.gnu.org/licenses/>. ##
 
-from __future__ import print_function
 import sqlite3
 import osm
 
@@ -55,11 +53,11 @@ _cursor.execute("""CREATE TABLE IF NOT EXISTS osm_node_tag
 
 _cursor.execute("""CREATE TABLE IF NOT EXISTS osm_way
  (id INTEGER PRIMARY KEY,
- version INTEGER,
- timestamp TEXT,
- changeset INTEGER,
- uid INTEGER,
- user TEXT);""")
+  version INTEGER,
+  timestamp TEXT,
+  changeset INTEGER,
+  uid INTEGER,
+  user TEXT);""")
 
 _cursor.execute("""CREATE TABLE IF NOT EXISTS osm_way_tag 
  (wid INTEGER NOT NULL,
@@ -176,3 +174,11 @@ def relation_retrieve(id):
     m = [r for r in _cursor.execute("""SELECT role, type, ref FROM osm_relation_member WHERE rid = ? ORDER BY seq ASC;""", (id,))]
     return osm.Relation(id, fields, tagDict, m)
 
+def data_store(dataList):
+    for item in dataList:
+        if isinstance(item, osm.Node):
+            node_store(item)
+        elif isinstance(item, osm.Way):
+            way_store(item)
+        elif isinstance(item, osm.Relation):
+            relation_store(item)

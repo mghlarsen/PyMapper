@@ -19,8 +19,10 @@ import sys
 from osm.node import Node
 from osm.way import Way
 from osm.relation import Relation
-from osm.fetch import map_get
-from osm.store import data_store
+from osm.fetch import map_get, node_get
+from osm.store import data_store, node_retrieve, way_retrieve
+
+DEBUG = True
 
 nodes = dict()
 ways = dict()
@@ -38,14 +40,18 @@ def mapGet(lat, lon, dist = 0.0125):
         elif isinstance(i, Way):
             ways[i.id] = i
             for n in i.nodes:
-                if n.in_bbox(lat - dist, lat + dist, lon - dist, lon + dist):
-                    nodeWays[n.id] = nodeWays[n.id] + [i.id]
+                if nodes[n].in_bbox(lat - dist, lat + dist, lon - dist, lon + dist):
+                    if not n in nodeWays:
+                        nodeWays[n] = [i.id]
+                    else:
+                        nodeWays[n] = nodeWays[n] + [i.id]
         elif isinstance(i, Relation):
             relations[i.id] = i
     return m
 
 def nodeGet(id):
-    if not id in nodes: nodes[id] = api.NodeGet(id) 
+    if not id in nodes:
+        nodes[id] = node_get(id)
     return nodes[id]
 
 def wayGet(id):
@@ -68,7 +74,7 @@ def main():
     if len(sys.argv) >= 4 and sys.argv[1] == "map":
         mapcmd(sys.argv)
     else:
-        print usage
+        print usage,
 
 def mapcmd(argv):
     if len(argv) == 4:
@@ -80,7 +86,7 @@ def mapcmd(argv):
     for i in m:
         if isinstance(i, Way):
             for j in i.nodes:
-               if j in nodeMap:
+               if j in nodes:
                    if not j in wayMap:
                        wayMap[j] = list()
                    if 'name' in i.tags:
@@ -88,9 +94,9 @@ def mapcmd(argv):
                    elif 'highway' in i.tags:
                        i.tags['name'] = i.tags['highway'] + ' road #' + str(i.id)
     for i in wayMap.keys():
-        print "%d (%s, %s): " %  (i, nodes[i].tags['lat'], nodeMap[i].tags['lon']),
+        print "%d (%s, %s): " %  (i, nodes[i].lat, nodes[i].lon),
         for w in wayMap[i]:
-           print w.tags['name'],
+            print w.tags['name'],
         print
 
 

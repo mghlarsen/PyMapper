@@ -48,3 +48,8 @@ class Node:
 
     def in_bbox(self, minLat, maxLat, minLon, maxLon):
         return (minLat <= self.lat) and (maxLat >= self.lat) and (minLon <= self.lon) and (maxLon >= self.lon)
+
+    def insert_tuple(self):
+        return (self.id, self.lat, self.lon, self.version, self.timestamp, self.changeset, self.uid, self.user)
+
+node_fields = ('id', 'lat', 'lon', 'version', 'timestamp', 'changeset', 'uid', 'user')

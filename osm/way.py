@@ -44,5 +44,10 @@ class Way:
         self.tags = tags
         self.nodes = nodes
 
+    def insert_tuple(self):
+        return (self.id, self.version, self.timestamp, self.changeset, self.uid, self.user)
+
     def __repr__(self):
         return "<Way id:%(id)s>" % {'id':self.id, 'tags':self.tags}
+
+way_fields = ('id', 'version', 'timestamp', 'changeset', 'uid', 'user')

@@ -60,5 +60,10 @@ class Relation:
         self.tags = tags
         self.members = [Relation.Member(m[0], m[1], m[2]) for m in members]
 
+    def insert_tuple(self):
+        return (self.id, self.version, self.timestamp, self.changeset, self.uid, self.user)
+
     def __repr__(self):
         return "<Relation id:%(id)s>" % {'id':self.id}
+
+relation_fields = ('id', 'version', 'timestamp', 'changeset', 'uid', 'user')

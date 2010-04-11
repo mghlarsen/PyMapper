@@ -16,18 +16,19 @@
 ## along with this program.  If not, see <http://www.gnu.org/licenses/>. ##
 
 import sys
-from osm.node import Node
-from osm.way import Way
-from osm.relation import Relation
-from osm.fetch import map_get, node_get
-from osm.store import data_store, node_retrieve, way_retrieve
+import osm.node
+import osm.way
+import osm.relation
+import osm.fetch
+import osm.store
+import osm.dict
 
 DEBUG = True
 
-nodes = dict()
-ways = dict()
-relations = dict()
-nodeWays = dict()
+nodes = osm.dict.NodeDict()
+ways = osm.dict.WayDict()
+relations = osm.dict.RelationDict()
+nodeWays = osm.dict.NodeWayDict()
 
 def mapGet(lat, lon, dist = 0.0125):
     if DEBUG:
@@ -48,23 +49,6 @@ def mapGet(lat, lon, dist = 0.0125):
         elif isinstance(i, Relation):
             relations[i.id] = i
     return m
-
-def nodeGet(id):
-    if not id in nodes:
-        nodes[id] = node_get(id)
-    return nodes[id]
-
-def wayGet(id):
-    if not id in ways: ways[id] = api.WayGet(id) 
-    return ways[id]
-
-def nodeWayGet(id):
-    if not id in nodeWays:
-        ways = api.NodeWays(id)
-        for i in xrange(len(ways)):
-            ways[i] = int(ways[i]['id'])
-        nodeWays[id] = ways
-    return nodeWays[id]
 
 usage = """Usage:
 osm.py map <lat> <lon> [<dist>]

@@ -17,7 +17,10 @@
 
 from urllib2 import urlopen
 from xml.dom.minidom import parse
-from osm import Node, Way, Relation
+import osm.node
+import osm.way
+import osm.relation
+import osm.store
 
 DEBUG = True
 DEFAULT_SERVER = "www.openstreetmap.org"
@@ -27,26 +30,57 @@ def extract_data(document):
     osm_node = document.documentElement
     assert osm_node.tagName == u'osm'
 
-    nodes = [Node(e) for e in osm_node.getElementsByTagName("node")]
-    ways = [Way(e) for e in osm_node.getElementsByTagName("way")]
-    relations = [Relation(e) for e in osm_node.getElementsByTagName("relation")]
+    nodes = [osm.node.Node(e) for e in osm_node.getElementsByTagName("node")]
+    ways = [osm.way.Way(e) for e in osm_node.getElementsByTagName("way")]
+    relations = [osm.relation.Relation(e) for e in osm_node.getElementsByTagName("relation")]
     return nodes + ways + relations
 
 def map_get(minLat, maxLat, minLon, maxLon, server = DEFAULT_SERVER, api = DEFAULT_API):
     doc = fetch("map?bbox=%(minLon)s,%(minLat)s,%(maxLon)s,%(maxLat)s" % locals(), server, api)
+    osm.store.map_store(minLat, maxLat, minLon, maxLon)
     return extract_data(doc)
 
 def relation_get(id, server = DEFAULT_SERVER, api = DEFAULT_API):
     doc = fetch("relation/%(id)s" % locals(), DEFAULT_SERVER, DEFAULT_API)
     return extract_data(doc)
 
+def relation_fetch(id, server = DEFAULT_SERVER, api = DEFAULT_API):
+    data = relation_get(id, server, api)
+    osm.store.data_store(data)
+    for d in data:
+        if isinstance(d, osm.relation.Relation) and d.id == id:
+            return d
+
 def way_get(id, server = DEFAULT_SERVER, api = DEFAULT_API):
     doc = fetch("way/%(id)s" % locals(), DEFAULT_SERVER, DEFAULT_API)
     return extract_data(doc)
 
+def way_fetch(id, server = DEFAULT_SERVER, api = DEFAULT_API):
+    data = way_get(id, server, api)
+    osm.store.data_store(data)
+    for d in data:
+        if isinstance(d, osm.way.Way) and d.id == id:
+            return d
+
 def node_get(id, server = DEFAULT_SERVER, api = DEFAULT_API):
     doc = fetch("node/%(id)s" % locals(), DEFAULT_SERVER, DEFAULT_API)
     return extract_data(doc)
+
+def node_fetch(id, server = DEFAULT_SERVER, api = DEFAULT_API):
+    data = node_get(id, server, api)
+    osm.store.data_store(data)
+    for d in data:
+        if isinstance(d, osm.node.Node) and d.id == id:
+            return d
+
+def node_way_get(id, server = DEFAULT_SERVER, api = DEFAULT_API):
+    doc = fetch("node/%(id)s/ways"% locals(), DEFAULT_SERVER, DEFAULT_API)
+    return extract_data(doc)
+
+def node_way_fetch(id, server = DEFAULT_SERVER, api = DEFAULT_API):
+    data = node_way_get(id, server, api)
+    osm.store.data_store(data)
+    return (d.id if isinstance(d, osm.way.Way) for d in data)
 
 def fetch(methodStr, server = DEFAULT_SERVER, api = DEFAULT_API):
     if DEBUG:

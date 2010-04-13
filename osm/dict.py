@@ -37,7 +37,7 @@ class OSMDict(collections.Mapping):
         return self.count()
 
     def __contains__(self, item):
-        return self.contains()
+        return self.contains(item)
 
     def __iter__(self):
         return self.iter()
@@ -58,7 +58,7 @@ class WayDict(OSMDict):
         count = osm.store.way_count
         contain = osm.store.way_exists
         iter = osm.store.way_iter
-        OSMDict.__init__(self, retr, store, fetch, count, contain, iter)
+        OSMDict.__init__(self, retr, fetch, count, contain, iter)
 
 class NodeWayDict(OSMDict):
     def __init__(self):
@@ -67,13 +67,15 @@ class NodeWayDict(OSMDict):
         count = osm.store.map_node_count
         contain = osm.store.map_node_exists
         iter = osm.store.node_way_iter
-        OSMDict.__init__(self, retr, store, fetch, count, contain, iter)
+        OSMDict.__init__(self, retr, fetch, count, contain, iter)
 
-class RelationDict(osm.dict.OSMDict):
+class RelationDict(OSMDict):
+
     def __init__(self):
         retr = osm.store.relation_retrieve
         fetch = osm.fetch.relation_get
         count = osm.store.relation_count
         contain = osm.store.relation_exists
         iter = osm.store.relation_iter
-        osm.OSMDict.__init__(self, retr, store, fetch, count, contain, iter)
+        OSMDict.__init__(self, retr, fetch, count, contain, iter)
+

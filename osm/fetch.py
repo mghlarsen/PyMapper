@@ -38,7 +38,9 @@ def extract_data(document):
 def map_get(minLat, maxLat, minLon, maxLon, server = DEFAULT_SERVER, api = DEFAULT_API):
     doc = fetch("map?bbox=%(minLon)s,%(minLat)s,%(maxLon)s,%(maxLat)s" % locals(), server, api)
     osm.store.map_store(minLat, maxLat, minLon, maxLon)
-    return extract_data(doc)
+    data = extract_data(doc)
+    osm.store.data_store(data)
+    return data
 
 def relation_get(id, server = DEFAULT_SERVER, api = DEFAULT_API):
     doc = fetch("relation/%(id)s" % locals(), DEFAULT_SERVER, DEFAULT_API)
@@ -80,7 +82,7 @@ def node_way_get(id, server = DEFAULT_SERVER, api = DEFAULT_API):
 def node_way_fetch(id, server = DEFAULT_SERVER, api = DEFAULT_API):
     data = node_way_get(id, server, api)
     osm.store.data_store(data)
-    return (d.id if isinstance(d, osm.way.Way) for d in data)
+    return (d.id for d in data if isinstance(d, osm.way.Way))
 
 def fetch(methodStr, server = DEFAULT_SERVER, api = DEFAULT_API):
     if DEBUG:

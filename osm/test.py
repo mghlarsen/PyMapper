@@ -15,22 +15,37 @@
 ## You should have received a copy of the GNU General Public License     ##
 ## along with this program.  If not, see <http://www.gnu.org/licenses/>. ##
 
-import sys
-import os
-
-DEBUG = True
-DATABASE_FILENAME = getattr(os.environ, 'OSM_DB_FNAME', "osm.db")
-DATABASE_USE_MEMORY = getattr(os.environ, 'OSM_DB_MEM', False)
-
-import osm.node
-import osm.way
-import osm.relation
+import unittest
+import osm
 import osm.fetch
-import osm.store
-import osm.dict
 
-nodes = osm.dict.NodeDict()
-ways = osm.dict.WayDict()
-relations = osm.dict.RelationDict()
-nodeWays = osm.dict.NodeWayDict()
+state = dict()
+
+def setup():
+    state['data'] = osm.fetch.map_get(40.850, 40.851, -73.937, -73.936)
+
+
+def testStoreNodeRetrieve():
+    for d in state['data']:
+        if isinstance(d, osm.node.Node):
+            assert osm.store.node_exists(d.id)
+            assert d.id == osm.store.node_retrieve(d.id).id
+
+def testStoreWayRetrieve():
+    for d in state['data']:
+        if isinstance(d, osm.way.Way):
+            assert osm.store.way_exists(d.id)
+            assert d.id == osm.store.way_retrieve(d.id).id
+
+def testStoreRelationRetrieve():
+    for d in state['data']:
+        if isinstance(d, osm.relation.Relation):
+            assert osm.store.relation_exists(d.id)
+            assert d.id == osm.store.relation_retrieve(d.id).id
+
+def testNode():
+    assert len(osm.nodes) > 0
+    for id, node in osm.nodes:
+        assert id == node.id
+        assert node != None
 

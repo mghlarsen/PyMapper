@@ -24,8 +24,8 @@ import osm.node
 import osm.way
 import osm.relation
 
-DATABASE_FILE_NAME = "osm.db"
-DATABASE_USE_MEMORY = True
+DATABASE_FILE_NAME = getattr(osm, 'DATABASE_FILE_NAME', "osm.db")
+DATABASE_USE_MEMORY = getattr(osm, 'DATABASE_USE_MEMORY', True)
 
 _connection = None
 if DATABASE_USE_MEMORY:
@@ -93,7 +93,7 @@ _create_osm_relation_member_sql = _create_sql % ('osm_relation_member',
 
 _create_osm_map_sql = _create_sql % ('osm_map',
  'id INTEGER PRIMARY KEY, minlat REAL, maxlat REAL, minlon REAL, maxlon REAL\
-  CHECK (minlat <= maxlat), CHECK (minlon <= maxlon);')
+  CHECK (minlat <= maxlat), CHECK (minlon <= maxlon)')
 
 with _trans(_connection) as cursor:
     cursor.execute(_create_osm_tag_sql)
@@ -146,7 +146,7 @@ def _getTagID(cursor, key, value):
     return idTuple[0]
 
 def node_store(node):
-    insert_sql = _insert_sql('osm_node', node_fields)
+    insert_sql = _insert_sql('osm_node', osm.node.node_fields)
     tag_insert_sql = _insert_sql('osm_node_tag', ('nid', 'tid'))
     with _trans(_connection) as c:
         c.execute(insert_sql, node.insert_tuple())
@@ -160,31 +160,32 @@ def node_marshall(id, fields):
         c.execute(select_tag_sql, (id,))
         for key, value in c:
             tagDict[key] = value
-        return osm.Node(id, fields, tagDict)
+        return osm.node.Node(id, fields, tagDict)
 
 def node_retrieve(id):
-    select_sql = _select_sql('osm_node', node_fields[1:], 'id = ?')
+    select_sql = _select_sql('osm_node', osm.node.node_fields[1:], 'id = ?')
     with _trans(_connection) as c:
         c.execute(select_sql, (id,))
         fields = c.fetchone()
         return node_marshall(id, fields)
 
 def node_count():
-    cursor = _connection.execute(select_sql('osm_node', 'COUNT(id)'))
+    cursor = _connection.execute(_select_sql('osm_node', 'COUNT(id)'))
     res = cursor.fetchone()
     return res[0]
 
 def node_exists(id):
+    print _select_sql('osm_node', 'COUNT(id)', 'id = ?'), (id,)
     cursor = _connection.execute(_select_sql('osm_node', 'COUNT(id)', 'id = ?'), (id,))
     res = cursor.fetchone()
     return res[0] > 0
 
 def node_iter():
-    cursor = _connection.execute(_select_sql('osm_node', node_fields))
-    return (node_marshall(fields[0], fields[1:]) for fields in cursor)
+    cursor = _connection.execute(_select_sql('osm_node', osm.node.node_fields))
+    return ((fields[0], node_marshall(fields[0], fields[1:])) for fields in cursor)
 
 def way_store(way):
-    insert_sql = _insert_sql('osm_way', way_fields)
+    insert_sql = _insert_sql('osm_way', osm.way.way_fields)
     tag_insert_sql = _insert_sql('osm_way_tag', ('wid', 'tid'))
     node_insert_sql = _insert_sql('osm_way_node', ('wid', 'seq', 'nid'))
     with _trans(_connection) as c:
@@ -204,10 +205,10 @@ def way_marshall(id, fields):
             tagDict[key] = value
         c.execute(select_node_sql, (id,))
         nodeList = (row[0] for row in c)
-        return osm.Way(id, fields, tagDict, nodeList)
+        return osm.way.Way(id, fields, tagDict, nodeList)
 
 def way_retrieve(id):
-    select_sql = _select_sql('osm_way', way_fields[1:], 'id = ?')
+    select_sql = _select_sql('osm_way', osm.way.way_fields[1:], 'id = ?')
     with _trans(_connection) as c:
         c.execute(select_sql, (id,))
         fields = c.fetchone()
@@ -224,7 +225,7 @@ def way_exists(id):
     return res[0] > 0
 
 def way_iter():
-    cursor = _connection.execute(_select_sql('osm_way', node_fields))
+    cursor = _connection.execute(_select_sql('osm_way', osm.way.way_fields))
     return (way_marshall(fields[0], fields[1:]) for fields in cursor)
 
 def relation_store(relation):
@@ -270,7 +271,7 @@ def relation_exists(id):
     return res[0] > 0
 
 def relation_iter():
-    cursor = _connection.execute(_select_sql('osm_relation', node_fields))
+    cursor = _connection.execute(_select_sql('osm_relation', osm.relation.relation_fields))
     return (relation_marshall(fields[0], fields[1:]) for fields in cursor)
 
 def map_store(minlat, maxlat, minlon, maxlon):
@@ -289,6 +290,24 @@ def node_way_retrieve(id):
         c.execute(select_sql, (id,))
         return (r[0] for r in c)
 
+def node_way_iter():
+    cursor = _connection.execute(select_sql(('osm_node', 'osm_map', 'osm_way_node'), 
+                                    ('nid', 'wid'), 
+                                    ('lat >= minlat', 'lat <= maxlat',
+                                     'lon >= minlon', 'lon <= maxlon', 
+                                     'osm_node.id = osm_way_node.nid ORDER BY nid ASC')))
+    def gen():
+        oldnid, wid = cursor.fetchone()
+        widList = [wid]
+        for nid, wid in cursor:
+            if oldnid == nid:
+                widList.append(wid)
+            else:
+                yield (oldnid, widList)
+                oldnid = nid
+                widList = [wid]
+    return gen
+
 def map_node_count():
     cursor = _connection.execute(select_sql(('osm_node', 'osm_map'), 'COUNT(osm_node.id)', 
                                     ('lat >= minlat', 'lat <= maxlat',
@@ -306,9 +325,9 @@ def map_node_exists(id):
 
 def data_store(dataList):
     for item in dataList:
-        if isinstance(item, osm.Node):
+        if isinstance(item, osm.node.Node):
             node_store(item)
-        elif isinstance(item, osm.Way):
+        elif isinstance(item, osm.way.Way):
             way_store(item)
         elif isinstance(item, osm.Relation):
             relation_store(item)

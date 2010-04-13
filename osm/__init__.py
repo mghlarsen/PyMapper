@@ -14,6 +14,32 @@
 ##                                                                       ##
 ## You should have received a copy of the GNU General Public License     ##
 ## along with this program.  If not, see <http://www.gnu.org/licenses/>. ##
+"""
+This is the "osm" module and package.
+
+The osm package provides a dict-based interface to obtaining map data from
+OpenStreetMap.org. It uses sqlite internally forcaching map data to reduce
+network usage and for speed.
+
+Members:
+DEBUG: enable debug info printing
+
+DATABASE_FILENAME: sqlite file created
+
+DATABASE_USE_MEMORY: create sqlite database in memory
+
+nodes: dictionary of osm.node.Node objects. Auto-fetches missing data
+when necessary. Use __contains__() or 'in' to check before.
+
+ways: dictionary of osm.way.Way objects. Auto-fetches missing data when
+necessary. Use __contains__() or 'in' to check before fetching.
+
+relations: dictionary of osm.relation.Relation objects. Auto-fetches missing
+data when necessary. Use __contains__() or 'in' to check before fetching.
+
+nodeWays: dictionary of node ids to the ids of the ways that contain them.
+
+"""
 
 import sys
 import os

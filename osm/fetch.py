@@ -36,22 +36,23 @@ DEFAULT_API = "0.6"
 
 def extract_data(document):
     """
-This function extracts the appropriate node, way, and relation objects from the
-supplied xml.minidom document element. It returns a list consisting of these
-objects.
+    This function extracts the appropriate node, way, and relation objects from
+    the supplied xml.minidom document element. It returns a list consisting of
+    these objects.
     """
     osm_node = document.documentElement
     assert osm_node.tagName == u'osm'
 
     nodes = [osm.node.Node(e) for e in osm_node.getElementsByTagName("node")]
     ways = [osm.way.Way(e) for e in osm_node.getElementsByTagName("way")]
-    relations = [osm.relation.Relation(e) for e in osm_node.getElementsByTagName("relation")]
+    relations = [osm.relation.Relation(e) for e in 
+                   osm_node.getElementsByTagName("relation")]
     return nodes + ways + relations
 
 def map_get(minLat, maxLat, minLon, maxLon, server = DEFAULT_SERVER, api = DEFAULT_API):
     """
-Gets all map data inside the box defined by the parameters from the designated
-server and api.
+    Gets all map data inside the box defined by the parameters from the
+    designated server and api.
     """
     doc = fetch("map?bbox=%(minLon)s,%(minLat)s,%(maxLon)s,%(maxLat)s" % locals(),
                 server, api)
@@ -62,18 +63,18 @@ server and api.
 
 def relation_get(id, server = DEFAULT_SERVER, api = DEFAULT_API):
     """
-Executes a query for the specified relation.
-Returns a list containing all the data returned by the server (presumably just
-the relation).
+    Executes a query for the specified relation.
+    Returns a list containing all the data returned by the server (presumably
+    just the relation).
     """
     doc = fetch("relation/%(id)s" % locals(), DEFAULT_SERVER, DEFAULT_API)
     return extract_data(doc)
 
 def relation_fetch(id, server = DEFAULT_SERVER, api = DEFAULT_API):
     """
-Executes a query for the specified relation, and caches all data from the
-response.
-Returns the requested relation object.
+    Executes a query for the specified relation, and caches all data from the
+    response.
+    Returns the requested relation object.
     """
     data = relation_get(id, server, api)
     osm.store.data_store(data)
@@ -83,18 +84,18 @@ Returns the requested relation object.
 
 def way_get(id, server = DEFAULT_SERVER, api = DEFAULT_API):
     """
-Executes a query for the specified way.
-Returns a list containing all the data returned by the server (presumably just
-the way).
+    Executes a query for the specified way.
+    Returns a list containing all the data returned by the server (presumably
+    just the way).
     """
     doc = fetch("way/%(id)s" % locals(), DEFAULT_SERVER, DEFAULT_API)
     return extract_data(doc)
 
 def way_fetch(id, server = DEFAULT_SERVER, api = DEFAULT_API):
     """
-Executes a query for the specified way, and caches all data from the
-response.
-Returns the requested way object.
+    Executes a query for the specified way, and caches all data from the
+    response.
+    Returns the requested way object.
     """
     data = way_get(id, server, api)
     osm.store.data_store(data)
@@ -104,18 +105,18 @@ Returns the requested way object.
 
 def node_get(id, server = DEFAULT_SERVER, api = DEFAULT_API):
     """
-Executes a query for the specified node.
-Returns a list containing all the data returned by the server (presumably just
-the node).
+    Executes a query for the specified node.
+    Returns a list containing all the data returned by the server (presumably
+    just the node).
     """
     doc = fetch("node/%(id)s" % locals(), DEFAULT_SERVER, DEFAULT_API)
     return extract_data(doc)
 
 def node_fetch(id, server = DEFAULT_SERVER, api = DEFAULT_API):
     """
-Executes a query for the specified node, and caches all data from the
-response.
-Returns the requested node object.
+    Executes a query for the specified node, and caches all data from the
+    response.
+    Returns the requested node object.
     """
     data = node_get(id, server, api)
     osm.store.data_store(data)
@@ -125,18 +126,18 @@ Returns the requested node object.
 
 def node_way_get(id, server = DEFAULT_SERVER, api = DEFAULT_API):
     """
-Executes a query for all ways that include the specified node.
-Returns a list containing all the data returned by the server (presumably just
-the ways).
+    Executes a query for all ways that include the specified node.
+    Returns a list containing all the data returned by the server (presumably
+    just the ways).
     """
     doc = fetch("node/%(id)s/ways"% locals(), DEFAULT_SERVER, DEFAULT_API)
     return extract_data(doc)
 
 def node_way_fetch(id, server = DEFAULT_SERVER, api = DEFAULT_API):
     """
-Executes a query for all ways that include the specified node, and caches the
-response.
-Returns the requested way objects.
+    Executes a query for all ways that include the specified node, and caches
+    the response.
+    Returns the requested way objects.
     """
     data = node_way_get(id, server, api)
     osm.store.data_store(data)
@@ -144,8 +145,8 @@ Returns the requested way objects.
 
 def fetch(methodStr, server = DEFAULT_SERVER, api = DEFAULT_API):
     """
-Execute a query to given server at the specified api version.
-Returns the server response parsed by xml.minidom.
+    Execute a query to given server at the specified api version.
+    Returns the server response parsed by xml.minidom.
     """
     if DEBUG:
         print "fetching http://%(server)s/api/%(api)s/%(methodStr)s" % locals()

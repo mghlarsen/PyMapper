@@ -1,4 +1,3 @@
-#!/usr/bin/python
 # -*- coding: utf-8 -*-
 
 ## Copyright 2010 Michael Larsen <mike.gh.larsen@gmail.com>
@@ -15,15 +14,29 @@
 ##                                                                       ##
 ## You should have received a copy of the GNU General Public License     ##
 ## along with this program.  If not, see <http://www.gnu.org/licenses/>. ##
+"""
+This module contains the Way class and associated functions and data.
+"""
 
 class Way:
+    """
+    This class represents a way object in openstreetmap.org data.
+    A Way represents either a path or an area.
+    """
     def __init__(self, *args):
+        """
+        If called with one argument, calls __from_element.
+        If called with three arguments, calls __from_data.
+        """
         if len(args) == 1:
             self.__from_element(*args)
         elif len(args) == 4:
             self.__from_data(*args)
 
     def __from_element(self, element):
+        """
+        Constructs a Way from a xml.minidom element object.
+        """
         attr = element.attributes
         self.id = int(attr['id'].nodeValue)
         self.version = int(attr['version'].nodeValue)
@@ -35,18 +48,32 @@ class Way:
         self.tags = dict()
         for e in tagElements:
             self.tags[e.attributes['k'].nodeValue] = e.attributes['v'].nodeValue
-        self.nodes = [int(nd.attributes['ref'].nodeValue) for nd in element.getElementsByTagName("nd")]
+        self.nodes = [int(nd.attributes['ref'].nodeValue) for nd in 
+                       element.getElementsByTagName("nd")]
 
     def __from_data(self, id, fields, tags, nodes):
+        """
+        Constructs a Way with the specified id. Fields should be a tuple of
+        (version, timestamp, changeset, uid, user). tags should have {k1:v1,
+        k2:v2, ...}. nodes should be a list of node ids.
+        """
         self.id = id
         self.version, self.timestamp, self.changeset, self.uid, self.user = fields
         self.tags = tags
         self.nodes = nodes
 
     def insert_tuple(self):
+        """
+        Return the database insert tuple for this relation.
+        (id, version, timestamp, changeset, uid, user)
+        """
         return (self.id, self.version, self.timestamp, self.changeset, self.uid, self.user)
 
     def __repr__(self):
+        """
+        Return a readable representation of this Way.
+        """
         return "<Way id:%(id)s>" % {'id':self.id, 'tags':self.tags}
 
 way_fields = ('id', 'version', 'timestamp', 'changeset', 'uid', 'user')
+

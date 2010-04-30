@@ -15,8 +15,8 @@
 ## You should have received a copy of the GNU General Public License     ##
 ## along with this program.  If not, see <http://www.gnu.org/licenses/>. ##
 """
-The osm.dict module provides the actual interface that is exposed in the osm module.
-
+The osm.dict module provides the actual interface that is exposed in the osm
+module.
 """
 
 import collections
@@ -26,7 +26,6 @@ import osm.fetch
 class OSMDict(collections.Mapping):
     """
     Generic dictionary based on pluggable functions.
-
     """
     def __init__(self, retrieve, fetch, count, contains, iter):
         """

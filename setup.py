@@ -25,6 +25,9 @@ setup(
     author = "Michael G. H. Larsen",
     author_email = "mike.gh.larsen@gmail.com",
     description = "An OpenStreetMap.org based mapping application",
-    license = "GPLv3"
+    license = "GPLv3",
+
+    setup_requires = ['nose>=0.11'],
+    test_suite = 'nose.collector'
 )
 

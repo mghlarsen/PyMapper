@@ -22,11 +22,7 @@ OpenStreetMap.org. It uses sqlite internally forcaching map data to reduce
 network usage and for speed.
 
 Members:
-DEBUG: enable debug info printing
-
-DATABASE_FILENAME: sqlite file created
-
-DATABASE_USE_MEMORY: create sqlite database in memory
+config: a ConfigParser.SafeConfigParser object holding config for osm.
 
 nodes: dictionary of osm.node.Node objects. Auto-fetches missing data
 when necessary. Use __contains__() or 'in' to check before.
@@ -41,13 +37,12 @@ nodeWays: dictionary of node ids to the ids of the ways that contain them.
 
 """
 
-import sys
-import os
+import ConfigParser
 
-DEBUG = True
-DATABASE_FILENAME = getattr(os.environ, 'OSM_DB_FNAME', "osm.db")
-DATABASE_USE_MEMORY = getattr(os.environ, 'OSM_DB_MEM', False)
-
+config = ConfigParser.SafeConfigParser({'debug':True, 'db-filename':'osm.db', 'db-use-memory':False})
+config.add_section('osm')
+config.read('osm.cfg')
+    
 import osm.node
 import osm.way
 import osm.relation

@@ -35,14 +35,12 @@ import osm.node
 import osm.way
 import osm.relation
 
-DATABASE_FILE_NAME = getattr(osm, 'DATABASE_FILE_NAME', "osm.db")
-DATABASE_USE_MEMORY = getattr(osm, 'DATABASE_USE_MEMORY', True)
 
 _connection = None
-if DATABASE_USE_MEMORY:
+if osm.config.get('osm','db-use-memory'):
     _connection = sqlite3.connect(":memory:")
 else:
-    _connection = sqlite3.connect(DATABASE_FILE_NAME)
+    _connection = sqlite3.connect(osm.config.get('osm', 'db-filename'))
 
 atexit.register(_connection.close)
 

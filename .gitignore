@@ -4,3 +4,4 @@ dist
 PyMapper.egg-info
 osm.db
 .coverage
+osm.cfg

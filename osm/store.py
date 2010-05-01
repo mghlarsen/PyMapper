@@ -49,8 +49,8 @@ atexit.register(_connection.close)
 @contextmanager
 def _trans(conn):
     """
-This is a context manager that makes sqlite3 operations in a transaction.
-Only included because sqlite3 doesn't have its own until Python 2.6.
+    This is a context manager that makes sqlite3 operations in a transaction.
+    Only included because sqlite3 doesn't have its own until Python 2.6.
     """
     cursor = conn.cursor()
     try:
@@ -148,8 +148,8 @@ with _trans(_connection) as cursor:
 
 def _insert_sql(table, fields):
     """
-Generate the insert SQL to put data into a row in table in fields.
-Returns the SQL with ?-style blanks.
+    Generate the insert SQL to put data into a row in table in fields.
+    Returns the SQL with ?-style blanks.
     """
     sql = 'INSERT OR REPLACE INTO %s (%s) VALUES (%s)'
     blanks = ['?',] * len(fields)
@@ -157,7 +157,7 @@ Returns the SQL with ?-style blanks.
 
 def _select_sql(tables, results, conditions = None):
     """
-Generate the select SQL to get results from table with conditions.
+    Generate the select SQL to get results from table with conditions.
     """
     sql = 'SELECT %(resultsTxt)s FROM %(tablesTxt)s WHERE %(conditionsTxt)s;'
     sql_nowhere = 'SELECT %(resultsTxt)s FROM %(tablesTxt)s;'
@@ -182,8 +182,8 @@ Generate the select SQL to get results from table with conditions.
 
 def _getTagID(cursor, key, value):
     """
-Gets the id of the tag with the given key:value pair.
-If it doesn't exist, this creates it.
+    Gets the id of the tag with the given key:value pair.
+    If it doesn't exist, this creates it.
     """
     select_sql = _select_sql('osm_tag', 'id', ('key = ?', 'value = ?'))
     insert_sql = _insert_sql('osm_tag', ('key', 'value'))
@@ -197,7 +197,7 @@ If it doesn't exist, this creates it.
 
 def node_store(node):
     """
-Store the given Node in the database.
+    Store the given Node in the database.
     """
     insert_sql = _insert_sql('osm_node', osm.node.node_fields)
     tag_insert_sql = _insert_sql('osm_node_tag', ('nid', 'tid'))
@@ -208,8 +208,8 @@ Store the given Node in the database.
 
 def node_marshall(id, fields):
     """
-Generate a Node object with id, and fields (as given in Node.__from_data).
-Fetches the required tag data from the database.
+    Generate a Node object with id, and fields (as given in Node.__from_data).
+    Fetches the required tag data from the database.
     """
     select_tag_sql = _select_sql('osm_node_tag INNER JOIN osm_tag ON tid = id', ('key', 'value'), 'nid = ?')
     with _trans(_connection) as c:
@@ -221,8 +221,8 @@ Fetches the required tag data from the database.
 
 def node_retrieve(id):
     """
-Retrieve the Node with id from the database.
-Returns the specified Node.
+    Retrieve the Node with id from the database.
+    Returns the specified Node.
     """
     select_sql = _select_sql('osm_node', osm.node.node_fields[1:], 'id = ?')
     with _trans(_connection) as c:
@@ -232,7 +232,7 @@ Returns the specified Node.
 
 def node_count():
     """
-Returns the number of nodes stored in the table.
+    Returns the number of nodes stored in the table.
     """
     cursor = _connection.execute(_select_sql('osm_node', 'COUNT(id)'))
     res = cursor.fetchone()
@@ -240,7 +240,7 @@ Returns the number of nodes stored in the table.
 
 def node_exists(id):
     """
-Returns true if a node with the given id exists in the database.
+    Returns true if a node with the given id exists in the database.
     """
     print _select_sql('osm_node', 'COUNT(id)', 'id = ?'), (id,)
     cursor = _connection.execute(_select_sql('osm_node', 'COUNT(id)', 'id = ?'), (id,))
@@ -249,14 +249,14 @@ Returns true if a node with the given id exists in the database.
 
 def node_iter():
     """
-Return an iterator over all nodes in the database as Node objects.
+    Return an iterator over all nodes in the database as Node objects.
     """
     cursor = _connection.execute(_select_sql('osm_node', osm.node.node_fields))
     return ((fields[0], node_marshall(fields[0], fields[1:])) for fields in cursor)
 
 def way_store(way):
     """
-Stores the given Way object in the database.
+    Stores the given Way object in the database.
     """
     insert_sql = _insert_sql('osm_way', osm.way.way_fields)
     tag_insert_sql = _insert_sql('osm_way_tag', ('wid', 'tid'))
@@ -270,8 +270,8 @@ Stores the given Way object in the database.
 
 def way_marshall(id, fields):
     """
-Returns a Way object with id and fields (as given in Way.__from_data).
-Generates tags and nodes from the database.
+    Returns a Way object with id and fields (as given in Way.__from_data).
+    Generates tags and nodes from the database.
     """
     select_tag_sql = _select_sql('osm_way_tag INNER JOIN osm_tag ON tid = id', ('key', 'value'), 'wid = ?')
     select_node_sql = _select_sql('osm_way_node', 'nid', 'wid = ? ORDER BY seq ASC')
@@ -286,7 +286,7 @@ Generates tags and nodes from the database.
 
 def way_retrieve(id):
     """
-Retrieve a Way object with the given id from the database.
+    Retrieve a Way object with the given id from the database.
     """
     select_sql = _select_sql('osm_way', osm.way.way_fields[1:], 'id = ?')
     with _trans(_connection) as c:
@@ -296,7 +296,7 @@ Retrieve a Way object with the given id from the database.
 
 def way_count():
     """
-Returns the number of ways stored in the database.
+    Returns the number of ways stored in the database.
     """
     cursor = _connection.execute(select_sql('osm_way', 'COUNT(id)'))
     res = cursor.fetchone()
@@ -304,7 +304,7 @@ Returns the number of ways stored in the database.
 
 def way_exists(id):
     """
-Returns true if a way with the given id is in the database.
+    Returns true if a way with the given id is in the database.
     """
     cursor = _connection.execute(_select_sql('osm_way', 'COUNT(id)', 'id = ?'), (id,))
     res = cursor.fetchone()
@@ -312,14 +312,14 @@ Returns true if a way with the given id is in the database.
 
 def way_iter():
     """
-Returns an iterator over all the ways in the database of Way objects.
+    Returns an iterator over all the ways in the database of Way objects.
     """
     cursor = _connection.execute(_select_sql('osm_way', osm.way.way_fields))
     return (way_marshall(fields[0], fields[1:]) for fields in cursor)
 
 def relation_store(relation):
     """
-Stores the given relation in the database.
+    Stores the given relation in the database.
     """
     insert_sql = _insert_sql('osm_relation', relation_fields)
     tag_insert_sql = _insert_sql('osm_relation_tag', ('rid', 'tid'))
@@ -334,8 +334,8 @@ Stores the given relation in the database.
 
 def relation_marshall(id, fields):
     """
-Creates a Relation with the given id and fields (as given in
-Relation.__from_data). Generates tags and members from the database.
+    Creates a Relation with the given id and fields (as given in
+    Relation.__from_data). Generates tags and members from the database.
     """
     select_tag_sql = _select_sql('osm_relation_tag INNER JOIN osm_tag ON tid = id', ('key', 'value'), 'rid = ?')
     select_member_sql = _select_sql('osm_relation_member', ('role', 'type', 'ref'), 'rid = ? ORDER BY seq ASC')
@@ -351,7 +351,7 @@ Relation.__from_data). Generates tags and members from the database.
 
 def relation_retrieve(id):
     """
-Retrieve the relation with the given id from the database.
+    Retrieve the relation with the given id from the database.
     """
     select_sql = _select_sql('osm_relation', relation_fields[1:], 'id = ?')
     with _trans(_connection) as c:
@@ -361,7 +361,7 @@ Retrieve the relation with the given id from the database.
 
 def relation_count():
     """
-Returns the number of relations stored in the database.
+    Returns the number of relations stored in the database.
     """
     cursor = _connection.execute(select_sql('osm_relation', 'COUNT(id)'))
     res = cursor.fetchone()
@@ -369,7 +369,7 @@ Returns the number of relations stored in the database.
 
 def relation_exists(id):
     """
-Returns true if a relation with the given id exists in the database.
+    Returns true if a relation with the given id exists in the database.
     """
     cursor = _connection.execute(_select_sql('osm_relation', 'COUNT(id)', 'id = ?'), (id,))
     res = cursor.fetchone()
@@ -377,21 +377,21 @@ Returns true if a relation with the given id exists in the database.
 
 def relation_iter():
     """
-Returns an iterator over all relations in the database as Relations.
+    Returns an iterator over all relations in the database as Relations.
     """
     cursor = _connection.execute(_select_sql('osm_relation', osm.relation.relation_fields))
     return (relation_marshall(fields[0], fields[1:]) for fields in cursor)
 
 def map_store(minlat, maxlat, minlon, maxlon):
     """
-Stores a record that the given bounding box has been fetched.
+    Stores a record that the given bounding box has been fetched.
     """
     insert_sql = _insert_sql('osm_map', ('minlat', 'maxlat', 'minlon', 'maxlon'))
     _connection.execute(insert_sql, (minlat, maxlat, minlon, maxlon))
 
 def check_in_map(lat, lon):
     """
-Returns true if the given (lat, lon) has been fetched.
+    Returns true if the given (lat, lon) has been fetched.
     """
     select_sql('osm_map', ('id'), ('minlat <= ?', 'minlon <= ?', 'maxlat >= ?', 'maxlon >= ?'))
     cursor = _connection.execute(select_sql, (lat, lon, lat, lon))
@@ -400,7 +400,7 @@ Returns true if the given (lat, lon) has been fetched.
 
 def node_way_retrieve(id):
     """
-Return a list of the id of all ways which include the given node.
+    Return a list of the id of all ways which include the given node.
     """
     select_sql = _select_sql('osm_way_node', ('wid'), 'nid = ?')
     with _trans(_connection) as c:
@@ -409,8 +409,8 @@ Return a list of the id of all ways which include the given node.
 
 def node_way_iter():
     """
-Return an iterator of (n, [w]) where n is a node, and [w] is a list of the ways
-that include n. 
+    Return an iterator of (n, [w]) where n is a node, and [w] is a list of the ways
+    that include n. 
     """
     cursor = _connection.execute(select_sql(('osm_node', 'osm_map', 'osm_way_node'), 
                                     ('nid', 'wid'), 
@@ -431,7 +431,7 @@ that include n.
 
 def map_node_count():
     """
-Return the number of nodes that are inside a map bounding box.
+    Return the number of nodes that are inside a map bounding box.
     """
     cursor = _connection.execute(select_sql(('osm_node', 'osm_map'), 'COUNT(osm_node.id)', 
                                     ('lat >= minlat', 'lat <= maxlat',
@@ -441,7 +441,7 @@ Return the number of nodes that are inside a map bounding box.
 
 def map_node_exists(id):
     """
-Return true if the given node is inside of a map bounding box.
+    Return true if the given node is inside of a map bounding box.
     """
     cursor = _connection.execute(select_sql(('osm_node', 'osm_map'), 'COUNT(osm_node.id)',
                 ('lat >= minlat', 'lat <= maxlat','lon >= minlon', 
@@ -452,7 +452,7 @@ Return true if the given node is inside of a map bounding box.
 
 def data_store(dataList):
     """
-Store all Node, Way and Relation objects in dataList in the database.
+    Store all Node, Way and Relation objects in dataList in the database.
     """
     for item in dataList:
         if isinstance(item, osm.node.Node):

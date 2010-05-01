@@ -19,13 +19,13 @@ This module contains the Relation class and associated functions and data.
 """
 class Relation:
     """
-This class represents a relation object in the openstreetmap.org data.
-A Relation represents a relation between some group of nodes, ways, and other
-relations.
+    This class represents a relation object in the openstreetmap.org data.
+    A Relation represents a relation between some group of nodes, ways, and
+    other relations.
     """
     class Member:
         """
-Represents a member of the Relation.
+        Represents a member of the Relation.
         """
         def __init__(self, *args):
             """

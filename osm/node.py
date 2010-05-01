@@ -68,11 +68,24 @@ class Node:
         return "<Node id:%(id)s lat:%(lat)s lon:%(lon)s>" %  {
             'id':self.id, 'lat':self.lat, 'lon':self.lon, 'tags':self.tags}
 
-    def in_bbox(self, minLat, maxLat, minLon, maxLon):
+    def __cmp__(self, other):
         """
-        Returns true if this node is inside the specified bounding box.
+        Comparison operator.
         """
-        return (minLat <= self.lat) and (maxLat >= self.lat) and (minLon <= self.lon) and (maxLon >= self.lon)
+        if isinstance(other, Node):
+            if self.id == other.id:
+                if ((self.lat == other.lat) and
+                    (self.lon == other.lon) and
+                    (self.version == other.version) and
+                    (self.timestamp == other.timestamp) and
+                    (self.changeset == other.changeset) and
+                    (self.uid == other.uid) and
+                    (self.user == other.user) and
+                    (self.tags == other.tags)):
+                        return 0
+                return self.version - other.version
+            return self.id - other.id
+        return NotImplemented
 
     def insert_tuple(self):
         """

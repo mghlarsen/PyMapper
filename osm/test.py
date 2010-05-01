@@ -48,4 +48,15 @@ def testNode():
     for id, node in osm.nodes:
         assert id == node.id
         assert node != None
+        assert osm.nodes[id] == node
+    assert 42427190 in osm.nodes
+    assert not 42431626 in osm.nodes
+    fetched = osm.nodes[42431626]
+    assert fetched.id == 42431626
+    assert 42431626 in osm.nodes
+    assert isinstance(fetched.__repr__(), str)
+    assert osm.nodes[42427190] < osm.nodes[42431626]
+    tampered = osm.store.node_retrieve(42431626)
+    tampered.version = tampered.version + 1
+    assert tampered > fetched
 

@@ -20,13 +20,13 @@ This module contains the node class an associated functions and data.
 
 class Node:
     """
-This class represents a node object in the openstreetmap.org data.
-A Node represents some point on the map and is used to define ways.
+    This class represents a node object in the openstreetmap.org data.
+    A Node represents some point on the map and is used to define ways.
     """
     def __init__(self, *args):
         """
-Create a Node object. If called with one argument, it will call __from_element.
-If called with three arguments, it will call __from_data.
+        Create a Node object. If called with one argument, it will call __from_element.
+        If called with three arguments, it will call __from_data.
         """
         if len(args) == 1:
             self.__from_element(args[0])
@@ -35,7 +35,7 @@ If called with three arguments, it will call __from_data.
 
     def __from_element(self, element):
         """
-Constructs a Node from a xml.minidom element object.
+        Constructs a Node from a xml.minidom element object.
         """
         attr = element.attributes
         self.id = int(attr['id'].nodeValue)
@@ -53,7 +53,9 @@ Constructs a Node from a xml.minidom element object.
 
     def __from_data(self, id, fields, tags):
         """
-Constructs a Node with the specified id. fields should be a tuple of (lat, lon, version, timestamp, changeset, uid, user). Tags should have {k1:v1, k2:v2, ...}.
+        Constructs a Node with the specified id. fields should be a tuple of 
+        (lat, lon, version, timestamp, changeset, uid, user). Tags should have 
+        {k1:v1, k2:v2, ...}.
         """
         self.id = id
         self.lat, self.lon, self.version, self.timestamp, self.changeset, self.uid, self.user = fields
@@ -61,21 +63,21 @@ Constructs a Node with the specified id. fields should be a tuple of (lat, lon, 
    
     def __repr__(self):
         """
-Return readable representation of this node.
+        Return readable representation of this node.
         """
         return "<Node id:%(id)s lat:%(lat)s lon:%(lon)s>" %  {
             'id':self.id, 'lat':self.lat, 'lon':self.lon, 'tags':self.tags}
 
     def in_bbox(self, minLat, maxLat, minLon, maxLon):
         """
-Returns true if this node is inside the specified bounding box.
+        Returns true if this node is inside the specified bounding box.
         """
         return (minLat <= self.lat) and (maxLat >= self.lat) and (minLon <= self.lon) and (maxLon >= self.lon)
 
     def insert_tuple(self):
         """
-Returns a tuple of information for insertion into the database.
-(id, lat, lon, version, timestamp, changeset, uid, user)
+        Returns a tuple of information for insertion into the database.
+        (id, lat, lon, version, timestamp, changeset, uid, user)
         """
         return (self.id, self.lat, self.lon, self.version, self.timestamp, self.changeset, self.uid, self.user)
 

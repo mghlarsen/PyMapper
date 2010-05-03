@@ -75,5 +75,23 @@ class Way:
         """
         return "<Way id:%(id)s>" % {'id':self.id, 'tags':self.tags}
 
+    def __cmp__(self, other):
+        """
+        Comparison operator.
+        """
+        if isinstance(other, Way):
+            if self.id == other.id:
+                if ((self.version == other.version) and
+                    (self.timestamp == other.timestamp) and
+                    (self.changeset == other.changeset) and
+                    (self.uid == other.uid) and
+                    (self.user == other.user) and
+                    (self.tags == other.tags) and
+                    (self.nodes == other.nodes)):
+                        return 0
+                return self.version - other.version
+            return self.id - other.id
+        return NotImplemented
+
 way_fields = ('id', 'version', 'timestamp', 'changeset', 'uid', 'user')
 

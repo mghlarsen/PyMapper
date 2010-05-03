@@ -60,3 +60,20 @@ def testNode():
     tampered.version = tampered.version + 1
     assert tampered > fetched
 
+def testWay():
+    assert len(osm.ways) > 0
+    for id, way in osm.ways.items():
+        assert id == way.id
+        assert way != None
+        assert osm.ways[id] == way
+    assert 5671196 in osm.ways
+    assert not 46425585 in osm.ways
+    fetched = osm.ways[46425585]
+    assert fetched.id == 46425585
+    assert 46425585 in osm.ways
+    assert isinstance(fetched.__repr__(), str)
+    assert osm.ways[46425585] > osm.ways[5671196]
+    tampered = osm.store.way_retrieve(46425585)
+    tampered.version = tampered.version + 1
+    assert tampered > fetched    
+

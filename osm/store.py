@@ -249,8 +249,8 @@ def node_iter():
     """
     Return an iterator over all nodes in the database as Node objects.
     """
-    cursor = _connection.execute(_select_sql('osm_node', osm.node.node_fields))
-    return ((fields[0], node_marshall(fields[0], fields[1:])) for fields in cursor)
+    cursor = _connection.execute(_select_sql('osm_node', osm.node.node_fields[0]))
+    return (fields[0] for fields in cursor)
 
 def way_store(way):
     """
@@ -279,7 +279,7 @@ def way_marshall(id, fields):
         for key, value in c:
             tagDict[key] = value
         c.execute(select_node_sql, (id,))
-        nodeList = (row[0] for row in c)
+        nodeList = [row[0] for row in c]
         return osm.way.Way(id, fields, tagDict, nodeList)
 
 def way_retrieve(id):
@@ -296,7 +296,7 @@ def way_count():
     """
     Returns the number of ways stored in the database.
     """
-    cursor = _connection.execute(select_sql('osm_way', 'COUNT(id)'))
+    cursor = _connection.execute(_select_sql('osm_way', 'COUNT(id)'))
     res = cursor.fetchone()
     return res[0]
 
@@ -312,8 +312,8 @@ def way_iter():
     """
     Returns an iterator over all the ways in the database of Way objects.
     """
-    cursor = _connection.execute(_select_sql('osm_way', osm.way.way_fields))
-    return (way_marshall(fields[0], fields[1:]) for fields in cursor)
+    cursor = _connection.execute(_select_sql('osm_way', osm.way.way_fields[0]))
+    return (fields[0] for fields in cursor)
 
 def relation_store(relation):
     """
@@ -343,7 +343,7 @@ def relation_marshall(id, fields):
         for key, value in c:
             tagDict[key] = value
         c.execute(select_member_sql, (id,))
-        m = (row[0] for row in c)
+        m = [row[0] for row in c]
         return osm.Relation(id, fields, tagDict, m)
 
 
@@ -377,8 +377,8 @@ def relation_iter():
     """
     Returns an iterator over all relations in the database as Relations.
     """
-    cursor = _connection.execute(_select_sql('osm_relation', osm.relation.relation_fields))
-    return (relation_marshall(fields[0], fields[1:]) for fields in cursor)
+    cursor = _connection.execute(_select_sql('osm_relation', osm.relation.relation_fields[0]))
+    return (fields[0] for fields in cursor)
 
 def map_store(minlat, maxlat, minlon, maxlon):
     """

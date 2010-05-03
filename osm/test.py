@@ -45,7 +45,7 @@ def testStoreRelationRetrieve():
 
 def testNode():
     assert len(osm.nodes) > 0
-    for id, node in osm.nodes:
+    for id, node in osm.nodes.items():
         assert id == node.id
         assert node != None
         assert osm.nodes[id] == node

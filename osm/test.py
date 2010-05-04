@@ -37,12 +37,6 @@ def testStoreWayRetrieve():
             assert osm.store.way_exists(d.id)
             assert d.id == osm.store.way_retrieve(d.id).id
 
-def testStoreRelationRetrieve():
-    for d in state['data']:
-        if isinstance(d, osm.relation.Relation):
-            assert osm.store.relation_exists(d.id)
-            assert d.id == osm.store.relation_retrieve(d.id).id
-
 def testNode():
     assert len(osm.nodes) > 0
     for id, node in osm.nodes.items():
@@ -59,6 +53,21 @@ def testNode():
     tampered = osm.store.node_retrieve(42431626)
     tampered.version = tampered.version + 1
     assert tampered > fetched
+
+def testNodeWay():
+    assert len(osm.nodeWays) > 0
+    for id, ways in osm.nodeWays.items():
+        for w in ways:
+            assert w in osm.ways
+            assert id in osm.ways[w].nodes
+        assert id in osm.nodes
+    assert not 42431626 in osm.nodeWays
+    assert 42444081 in osm.nodeWays
+    fetched = osm.nodeWays[42431626]
+    assert fetched != None
+    print fetched
+    for w in fetched:
+        assert 42431626 in osm.ways[w].nodes
 
 def testWay():
     assert len(osm.ways) > 0
@@ -83,6 +92,7 @@ def testRelation():
     fetched = osm.relations[61320]
     assert fetched.id == 61320
     assert 61320 in osm.relations
+    assert osm.store.relation_retrieve(61320) == fetched
     assert not 224951 in osm.relations
     fetched2 = osm.relations[224951]
     assert 224951 in osm.relations
@@ -97,4 +107,13 @@ def testRelation():
     assert tampered != fetched2
     tampered.version = tampered.version + 1
     assert tampered > fetched2
+
+def testStoreCheckInMap():
+    assert osm.store.check_in_map(40.8505, -73.9365)
+    assert not osm.store.check_in_map(40.8505, -73.9375)
+    assert not osm.store.check_in_map(40.8515, -73.9365)
+    assert not osm.store.check_in_map(40.8495, -73.9365)
+    assert not osm.store.check_in_map(40.8505, -73.9385)
+    assert osm.store.map_node_exists(42444081)
+    assert not osm.store.map_node_exists(42431626)
 

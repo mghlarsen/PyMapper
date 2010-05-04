@@ -240,7 +240,6 @@ def node_exists(id):
     """
     Returns true if a node with the given id exists in the database.
     """
-    print _select_sql('osm_node', 'COUNT(id)', 'id = ?'), (id,)
     cursor = _connection.execute(_select_sql('osm_node', 'COUNT(id)', 'id = ?'), (id,))
     res = cursor.fetchone()
     return res[0] > 0
@@ -343,7 +342,7 @@ def relation_marshall(id, fields):
         for key, value in c:
             tagDict[key] = value
         c.execute(select_member_sql, (id,))
-        m = [row[0] for row in c]
+        m = [row for row in c]
         return osm.relation.Relation(id, fields, tagDict, m)
 
 
@@ -391,7 +390,7 @@ def check_in_map(lat, lon):
     """
     Returns true if the given (lat, lon) has been fetched.
     """
-    select_sql('osm_map', ('id'), ('minlat <= ?', 'minlon <= ?', 'maxlat >= ?', 'maxlon >= ?'))
+    select_sql = _select_sql('osm_map', ('id'), ('minlat <= ?', 'minlon <= ?', 'maxlat >= ?', 'maxlon >= ?'))
     cursor = _connection.execute(select_sql, (lat, lon, lat, lon))
     res = cursor.fetchone()
     return res != None
@@ -403,35 +402,30 @@ def node_way_retrieve(id):
     select_sql = _select_sql('osm_way_node', ('wid'), 'nid = ?')
     with _trans(_connection) as c:
         c.execute(select_sql, (id,))
-        return (r[0] for r in c)
+        res = [r[0] for r in c]
+        if len(res) == 0 and not map_node_exists(id):
+            raise KeyError
+        return res
 
 def node_way_iter():
     """
     Return an iterator of (n, [w]) where n is a node, and [w] is a list of the ways
     that include n. 
     """
-    cursor = _connection.execute(select_sql(('osm_node', 'osm_map', 'osm_way_node'), 
-                                    ('nid', 'wid'), 
-                                    ('lat >= minlat', 'lat <= maxlat',
-                                     'lon >= minlon', 'lon <= maxlon', 
-                                     'osm_node.id = osm_way_node.nid ORDER BY nid ASC')))
-    def gen():
-        oldnid, wid = cursor.fetchone()
-        widList = [wid]
-        for nid, wid in cursor:
-            if oldnid == nid:
-                widList.append(wid)
-            else:
-                yield (oldnid, widList)
-                oldnid = nid
-                widList = [wid]
-    return gen
+    select_sql= _select_sql(('osm_node', 'osm_map', 'osm_way_node'), 
+                            ('DISTINCT nid',), 
+                            ('lat >= minlat', 'lat <= maxlat',
+                             'lon >= minlon', 'lon <= maxlon', 
+                             'osm_node.id = osm_way_node.nid ORDER BY nid ASC'))
+    with _trans(_connection) as c:
+        c.execute(select_sql)
+        return (r[0] for r in c)
 
 def map_node_count():
     """
     Return the number of nodes that are inside a map bounding box.
     """
-    cursor = _connection.execute(select_sql(('osm_node', 'osm_map'), 'COUNT(osm_node.id)', 
+    cursor = _connection.execute(_select_sql(('osm_node', 'osm_map'), 'COUNT(osm_node.id)', 
                                     ('lat >= minlat', 'lat <= maxlat',
                                      'lon >= minlon', 'lon <= maxlon')))
     res = cursor.fetchone()
@@ -441,10 +435,9 @@ def map_node_exists(id):
     """
     Return true if the given node is inside of a map bounding box.
     """
-    cursor = _connection.execute(select_sql(('osm_node', 'osm_map'), 'COUNT(osm_node.id)',
-                ('lat >= minlat', 'lat <= maxlat','lon >= minlon', 
-                 'lon <= maxlon', 'osm_node.id = ?')), (id,))
-    cursor = _connection.execute(_select_sql('osm_node', 'COUNT(id)', 'id = ?'), (id,))
+    select_sql = """SELECT COUNT(osm_map.id) FROM osm_node, osm_map WHERE 
+                    lat >= minlat AND lat <= maxlat AND lon >= minlon AND lon <= maxlon AND osm_node.id = ?;"""
+    cursor = _connection.execute(select_sql, (id,))
     res = cursor.fetchone()
     return res[0] > 0
 

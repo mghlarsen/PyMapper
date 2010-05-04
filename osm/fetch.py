@@ -154,7 +154,3 @@ def fetch(methodStr, server = DEFAULT_SERVER, api = DEFAULT_API):
 
     return parse(results)
 
-res = None
-if __name__ == "__main__":
-    res = map_get(40.85, 40.86, -73.94, -73.93)
-

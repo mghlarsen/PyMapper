@@ -93,9 +93,9 @@ Constructs a Relation from a xml.minidom element object.
 
     def __from_data(self, id, fields, tags, members):
         """
-Constructs a Relation with the specified id. Fields should be a tuple of (version,
-timestamp, changeset, uid, user). tags should have {k1:v1, k2:v2, ...}. members
-should be a list of tuples for each member of the form (role, type, ref).
+        Constructs a Relation with the specified id. Fields should be a tuple of (version,
+        timestamp, changeset, uid, user). tags should have {k1:v1, k2:v2, ...}. members
+        should be a list of tuples for each member of the form (role, type, ref).
         """
         self.id = id
         self.version, self.timestamp, self.changeset, self.uid, self.user = fields
@@ -104,14 +104,14 @@ should be a list of tuples for each member of the form (role, type, ref).
 
     def insert_tuple(self):
         """
-Return the database insert tuple for this relation.
-(id, version, timestamp, changeset, uid, user)
+        Return the database insert tuple for this relation.
+        (id, version, timestamp, changeset, uid, user)
         """
         return (self.id, self.version, self.timestamp, self.changeset, self.uid, self.user)
 
     def __repr__(self):
         """
-Return a readable representation of this Relation.
+        Return a readable representation of this Relation.
         """
         return "<Relation id:%(id)s>" % {'id':self.id}
 

@@ -57,6 +57,13 @@ ref -- the id # of the object this Member refers to.
             self.type = type
             self.ref = ref
 
+        def __cmp__(self, other):
+            if ((self.type == other.type) and
+                (self.ref == other.ref) and
+                (self.role == other.role)):
+                    return 0
+            return -1
+
     def __init__(self, *args):
         """
 If called with one argument, calls __from_element.
@@ -107,6 +114,26 @@ Return the database insert tuple for this relation.
 Return a readable representation of this Relation.
         """
         return "<Relation id:%(id)s>" % {'id':self.id}
+
+    def __cmp__(self, other):
+        """
+        Comparison operator.
+        """
+        if isinstance(other, Relation):
+            if self.id == other.id:
+                if ((self.version == other.version) and
+                    (self.timestamp == other.timestamp) and
+                    (self.changeset == other.changeset) and
+                    (self.uid == other.uid) and
+                    (self.user == other.user) and
+                    (self.tags == other.tags) and
+                    (self.members == other.members)):
+                        return 0
+                if self.version == other.version:
+                    return -1
+                return self.version - other.version
+            return self.id - other.id
+        return NotImplemented
 
 relation_fields = ('id', 'version', 'timestamp', 'changeset', 'uid', 'user')
 

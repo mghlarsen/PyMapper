@@ -319,9 +319,9 @@ def relation_store(relation):
     """
     Stores the given relation in the database.
     """
-    insert_sql = _insert_sql('osm_relation', relation_fields)
+    insert_sql = _insert_sql('osm_relation', osm.relation.relation_fields)
     tag_insert_sql = _insert_sql('osm_relation_tag', ('rid', 'tid'))
-    member_insert_sql = _insert_sql('osm_relation_member', ('rid', 'seq', 'role', type, ref))
+    member_insert_sql = _insert_sql('osm_relation_member', ('rid', 'seq', 'role', 'type', 'ref'))
     with _trans(_connection) as c:
         c.execute(insert_sql, relation.insert_tuple())
         for i in relation.tags.items():
@@ -344,14 +344,14 @@ def relation_marshall(id, fields):
             tagDict[key] = value
         c.execute(select_member_sql, (id,))
         m = [row[0] for row in c]
-        return osm.Relation(id, fields, tagDict, m)
+        return osm.relation.Relation(id, fields, tagDict, m)
 
 
 def relation_retrieve(id):
     """
     Retrieve the relation with the given id from the database.
     """
-    select_sql = _select_sql('osm_relation', relation_fields[1:], 'id = ?')
+    select_sql = _select_sql('osm_relation', osm.relation.relation_fields[1:], 'id = ?')
     with _trans(_connection) as c:
         c.execute(select_sql, (id,))
         fields = c.fetchone()
@@ -361,7 +361,7 @@ def relation_count():
     """
     Returns the number of relations stored in the database.
     """
-    cursor = _connection.execute(select_sql('osm_relation', 'COUNT(id)'))
+    cursor = _connection.execute(_select_sql('osm_relation', 'COUNT(id)'))
     res = cursor.fetchone()
     return res[0]
 
@@ -457,6 +457,6 @@ def data_store(dataList):
             node_store(item)
         elif isinstance(item, osm.way.Way):
             way_store(item)
-        elif isinstance(item, osm.Relation):
+        elif isinstance(item, osm.relation.Relation):
             relation_store(item)
 

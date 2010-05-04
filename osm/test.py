@@ -77,3 +77,24 @@ def testWay():
     tampered.version = tampered.version + 1
     assert tampered > fetched    
 
+def testRelation():
+    assert len(osm.relations) == 0
+    assert not 61320 in osm.relations
+    fetched = osm.relations[61320]
+    assert fetched.id == 61320
+    assert 61320 in osm.relations
+    assert not 224951 in osm.relations
+    fetched2 = osm.relations[224951]
+    assert 224951 in osm.relations
+    for id, relation in osm.relations.items():
+        assert id == relation.id
+        assert relation != None
+        assert osm.relations[id] == relation
+    assert isinstance(fetched.__repr__(), str)
+    assert osm.relations[61320] < osm.relations[224951]
+    tampered = osm.store.relation_retrieve(224951)
+    tampered.members[0].ref = "relation"
+    assert tampered != fetched2
+    tampered.version = tampered.version + 1
+    assert tampered > fetched2
+

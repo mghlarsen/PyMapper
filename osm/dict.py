@@ -137,7 +137,7 @@ class RelationDict(OSMDict):
     """
     def __init__(self):
         retr = osm.store.relation_retrieve
-        fetch = osm.fetch.relation_get
+        fetch = osm.fetch.relation_fetch
         count = osm.store.relation_count
         contain = osm.store.relation_exists
         iter = osm.store.relation_iter

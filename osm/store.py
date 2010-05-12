@@ -37,7 +37,7 @@ import osm.relation
 
 
 _connection = None
-if osm.config.get('osm','db-use-memory'):
+if osm.config.get('osm','db-use-memory').lower() in ["true", "on"]:
     _connection = sqlite3.connect(":memory:")
 else:
     _connection = sqlite3.connect(osm.config.get('osm', 'db-filename'))

@@ -19,7 +19,7 @@ from setuptools import setup, find_packages
 
 setup(
     name = "PyMapper",
-    version = "0.1a1",
+    version = "0.1a2",
     packages = find_packages(),
 
     author = "Michael G. H. Larsen",

@@ -21,24 +21,26 @@ import math
 import Queue
 
 DEBUG = True
-MAX_ITER = 100
+MAX_ITER = 1000
 
 def routeFind(src, dst, queue_max_size = 0):
-    srcNode = osm.nodeGet(src)
-    dstNode = osm.nodeGet(dst)
+    srcNode = osm.nodes[src]
+    dstNode = osm.nodes[dst]
 
     toAnalyze = Queue.PriorityQueue(queue_max_size)
     analyzed = dict()
 
     toAnalyze.put((0 + distance(src, dst), src, 0, []))
+    queueSize = 1
 
     i = 0
 
     while (not toAnalyze.empty()) and (i < MAX_ITER):
         i += 1
         estDist, curr, currPathDist, path = toAnalyze.get()
+        queueSize -= 1
         if DEBUG:
-            print "est:%s curr:%s distance:%s path:%s" % (estDist, curr, currPathDist, path)
+            print "left:%s est:%s curr:%s distance:%s path:%s" % (queueSize, estDist, curr, currPathDist, path)
         if curr == dst: return (path, currPathDist)
         if curr in analyzed and currPathDist >= analyzed[curr]:
             continue
@@ -49,32 +51,38 @@ def routeFind(src, dst, queue_max_size = 0):
             nextEstDist = nextPathDist + distance(n, dst)
             nextPath = path + [n]
             toAnalyze.put((nextEstDist, n, nextPathDist, nextPath))
+            queueSize += 1
         analyzed[curr] = currPathDist
     return ([], -1)
 
 def getAdjacent(nodeID):
-    wayIDs = osm.nodeWayGet(nodeID)
+    wayIDs = osm.nodeWays[nodeID]
     adjacent = []
     for wayID in wayIDs:
-	way = wayGet(wayID)
+        way = osm.ways[wayID]
         curr = -1
-        for i in xrange(len(way['nd'])):
-            if way['nd'][i] == nodeID:
+        for i in xrange(len(way.nodes)):
+            if way.nodes[i] == nodeID:
                 curr = i
                 break
         if curr == -1: continue
-
-        if i > 0: adjacent.append(way['nd'][i - 1])
-        if i < len(way['nd']) - 1: adjacent.append(way['nd'][i + 1])
+        
+        if DEBUG:
+            print "node:%s way:%s i:%s way.nodes:%s%s" % (nodeID, wayID, i, len(way.nodes), way.nodes),
+            if i != 0: print " %s" % (way.nodes[i - 1], ),
+            if i < len(way.nodes) - 1: print " %s" % (way.nodes[i + 1]),
+            print
+        if i > 0: adjacent.append(way.nodes[i - 1])
+        if i < len(way.nodes) - 1: adjacent.append(way.nodes[i + 1])
     return adjacent
 
 def distance(srcID, dstID):
-    srcNode = osm.nodeGet(srcID)
-    dstNode = osm.nodeGet(dstID)
-    srcLat = float(srcNode['lat'])
-    srcLon = float(srcNode['lon'])
-    dstLat = float(dstNode['lat'])
-    dstLon = float(dstNode['lon'])
+    srcNode = osm.nodes[srcID]
+    dstNode = osm.nodes[dstID]
+    srcLat = srcNode.lat
+    srcLon = srcNode.lon
+    dstLat = dstNode.lat
+    dstLon = dstNode.lon
     return math.sqrt(((srcLat - dstLat)**2) + ((srcLon - dstLon)**2))
 
 usage = """Usage:
@@ -85,3 +93,4 @@ if __name__ == '__main__':
         print usage
     else:
         print routeFind(int(sys.argv[1]), int(sys.argv[2]))
+

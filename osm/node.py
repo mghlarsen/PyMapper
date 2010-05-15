@@ -17,6 +17,7 @@
 """
 This module contains the node class an associated functions and data.
 """
+import osm
 
 class Node:
     """
@@ -61,6 +62,36 @@ class Node:
         self.lat, self.lon, self.version, self.timestamp, self.changeset, self.uid, self.user = fields
         self.tags = tags
    
+    def __getattr__(self, name):
+        if name == 'ways':
+            ways = osm.nodeWays[self.id]
+            if not ways:
+                ways = osm.nodeWays[self.id]
+            return [osm.ways[wid] for wid in ways]
+        raise AttributeError
+
+    def adjacent(self, filters=[]):
+        pre_filtering = []
+        for way in self.ways:
+            idx = way.nodes.index(self.id)
+            if way.nodes.count(self.id) > 1:
+                oidx = len(way.nodes) - 1
+                if idx != 0 or way.nodes.count(self.id) > 2 or way.nodes[oidx] != way.nodes[idx]:
+                    continue
+                pre_filtering.append((osm.nodes[way.nodes[1]], way, 0, 1))
+                pre_filtering.append((osm.nodes[way.nodes[oidx - 1]], way, len(way.nodes), oidx, oidx - 1))
+            else:
+                if idx + 1 < len(way.nodes):
+                    pre_filtering.append((osm.nodes[way.nodes[idx + 1]], way, idx, idx + 1))
+                if idx > 0:
+                    pre_filtering.append((osm.nodes[way.nodes[idx - 1]], way, idx, idx - 1)) 
+        def all_filters(i):
+            return reduce(lambda x,y: x and y, map(lambda x: x(i), filters), True)
+        return map(lambda x: x[0], filter(all_filters, pre_filtering))
+
+    def __hash__(self):
+        return hash(self.id)
+    
     def __repr__(self):
         """
         Return readable representation of this node.
@@ -95,3 +126,4 @@ class Node:
         return (self.id, self.lat, self.lon, self.version, self.timestamp, self.changeset, self.uid, self.user)
 
 node_fields = ('id', 'lat', 'lon', 'version', 'timestamp', 'changeset', 'uid', 'user')
+

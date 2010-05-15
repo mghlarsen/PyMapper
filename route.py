@@ -21,69 +21,56 @@ import math
 import Queue
 
 DEBUG = True
-MAX_ITER = 1000
+MAX_ITER = 10000
 
 def routeFind(src, dst, queue_max_size = 0):
-    srcNode = osm.nodes[src]
-    dstNode = osm.nodes[dst]
-
     toAnalyze = Queue.PriorityQueue(queue_max_size)
     analyzed = dict()
 
     toAnalyze.put((0 + distance(src, dst), src, 0, []))
-    queueSize = 1
 
     i = 0
-
     while (not toAnalyze.empty()) and (i < MAX_ITER):
         i += 1
         estDist, curr, currPathDist, path = toAnalyze.get()
-        queueSize -= 1
         if DEBUG:
-            print "left:%s est:%s curr:%s distance:%s path:%s" % (queueSize, estDist, curr, currPathDist, path)
+            print "i:%d  qsize:%d  est:%f  curr:%d  distance:%f" % (i, toAnalyze.qsize(), estDist, curr.id, currPathDist),
         if curr == dst: return (path, currPathDist)
         if curr in analyzed and currPathDist >= analyzed[curr]:
+            print "analyzed[curr]:%f currPathDist:%f DROPPING" % (analyzed[curr], currPathDist)
             continue
-        next = getAdjacent(curr)
-        for n in next:
+        currBearing = bearing(curr, dst)
+        print [n.id for n in curr.adjacent()]
+        for n in curr.adjacent():
             nextDist = distance(curr, n)
             nextPathDist = currPathDist + nextDist
-            nextEstDist = nextPathDist + distance(n, dst)
+            deltaBearing = diff_bearing(bearing(curr, n), currBearing)
+            nextEstDist = nextPathDist + (distance(n, dst) * (1 + (deltaBearing / (math.pi * 2))))
             nextPath = path + [n]
+            if DEBUG:
+                print "id:%d  est:%f  path:%f" % (n.id, nextEstDist, nextPathDist) 
             toAnalyze.put((nextEstDist, n, nextPathDist, nextPath))
-            queueSize += 1
         analyzed[curr] = currPathDist
     return ([], -1)
 
-def getAdjacent(nodeID):
-    wayIDs = osm.nodeWays[nodeID]
-    adjacent = []
-    for wayID in wayIDs:
-        way = osm.ways[wayID]
-        curr = -1
-        for i in xrange(len(way.nodes)):
-            if way.nodes[i] == nodeID:
-                curr = i
-                break
-        if curr == -1: continue
-        
-        if DEBUG:
-            print "node:%s way:%s i:%s way.nodes:%s%s" % (nodeID, wayID, i, len(way.nodes), way.nodes),
-            if i != 0: print " %s" % (way.nodes[i - 1], ),
-            if i < len(way.nodes) - 1: print " %s" % (way.nodes[i + 1]),
-            print
-        if i > 0: adjacent.append(way.nodes[i - 1])
-        if i < len(way.nodes) - 1: adjacent.append(way.nodes[i + 1])
-    return adjacent
+def distance(src, dst):
+    from math import acos, cos, sin
+    term1 = sin(src.lat) * sin(dst.lat)
+    term2 = cos(src.lat) * cos(dst.lat) * cos(dst.lon - src.lon)
+    return 6371.0 * acos(term1 + term2)
 
-def distance(srcID, dstID):
-    srcNode = osm.nodes[srcID]
-    dstNode = osm.nodes[dstID]
-    srcLat = srcNode.lat
-    srcLon = srcNode.lon
-    dstLat = dstNode.lat
-    dstLon = dstNode.lon
-    return math.sqrt(((srcLat - dstLat)**2) + ((srcLon - dstLon)**2))
+def bearing(src, dst):
+    from math import atan2, cos, sin
+    y = sin(dst.lon - src.lon) * cos(dst.lat)
+    x = cos(src.lat) * sin (dst.lat) - sin(src.lat) * cos(dst.lat) * cos(dst.lon - src.lon)
+    return atan2(y, x)
+
+def diff_bearing(t1, t2):
+    if t1 < t2:
+        return diff_bearing(t2, t1)
+    if t1 < 0 or t2 >= 0 or t2 + math.pi > t1:
+        return t1 - t2
+    return t2 + (2 * math.pi) - t1
 
 usage = """Usage:
 route.py <src node #> <dst node #>"""
@@ -92,5 +79,5 @@ if __name__ == '__main__':
     if len(sys.argv) < 3:
         print usage
     else:
-        print routeFind(int(sys.argv[1]), int(sys.argv[2]))
+        print routeFind(osm.nodes[int(sys.argv[1])], osm.nodes[int(sys.argv[2])])
 

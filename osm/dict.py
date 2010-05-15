@@ -23,6 +23,9 @@ import collections
 import osm.store
 import osm.fetch
 
+MAP_SIZE = 0.0075
+MAP_THRESHOLD = 0.25 
+
 class OSMDict(collections.Mapping):
     """
     Generic dictionary based on pluggable functions.
@@ -103,6 +106,22 @@ class WayDict(OSMDict):
         iter = osm.store.way_iter
         OSMDict.__init__(self, retr, fetch, count, contain, iter)
 
+def id_to_node(id):
+    try:
+        return osm.store.node_retrieve(id)
+    except:
+        return osm.fetch.node_fetch(id)    
+
+def node_way_fetch(id):
+    node = id_to_node(id)
+    if osm.store.map_node_close(id, MAP_SIZE * MAP_THRESHOLD):
+        return osm.fetch.node_way_fetch(id)
+    osm.fetch.map_get(node.lat - MAP_SIZE / 2, node.lat + MAP_SIZE / 2, node.lon - MAP_SIZE / 2, node.lon + MAP_SIZE / 2)
+    try:
+        osm.store.node_way_retrieve(id)
+    except:
+        raise KeyError
+
 class NodeWayDict(OSMDict):
     """
     OSMDict subclass that indexes which ways contain each node.
@@ -117,7 +136,7 @@ class NodeWayDict(OSMDict):
     """
     def __init__(self):
         retr = osm.store.node_way_retrieve
-        fetch = osm.fetch.node_way_fetch
+        fetch = node_way_fetch
         count = osm.store.map_node_count
         contain = osm.store.map_node_exists
         iter = osm.store.node_way_iter

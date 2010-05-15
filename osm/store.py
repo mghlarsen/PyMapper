@@ -193,12 +193,17 @@ def _getTagID(cursor, key, value):
         idTuple = cursor.fetchone()
     return idTuple[0]
 
-def node_store(node):
+def node_store(node, cursor = None):
     """
     Store the given Node in the database.
     """
     insert_sql = _insert_sql('osm_node', osm.node.node_fields)
     tag_insert_sql = _insert_sql('osm_node_tag', ('nid', 'tid'))
+    c = cursor
+    if c:
+        c.execute(insert_sql, node.insert_tuple())
+        for i in node.tags.items():
+            c.execute(tag_insert_sql, (node.id, _getTagID(c, *i))) 
     with _trans(_connection) as c:
         c.execute(insert_sql, node.insert_tuple())
         for i in node.tags.items():
@@ -251,13 +256,21 @@ def node_iter():
     cursor = _connection.execute(_select_sql('osm_node', osm.node.node_fields[0]))
     return (fields[0] for fields in cursor)
 
-def way_store(way):
+def way_store(way, cursor = None):
     """
     Stores the given Way object in the database.
     """
     insert_sql = _insert_sql('osm_way', osm.way.way_fields)
     tag_insert_sql = _insert_sql('osm_way_tag', ('wid', 'tid'))
     node_insert_sql = _insert_sql('osm_way_node', ('wid', 'seq', 'nid'))
+    c = cursor
+    if c:
+        c.execute(insert_sql, way.insert_tuple())
+        for i in way.tags.items():
+            c.execute(tag_insert_sql, (way.id, _getTagID(c, *i)))
+        for i in xrange(len(way.nodes)):
+            c.execute(node_insert_sql, (way.id, i, way.nodes[i]))
+
     with _trans(_connection) as c:
         c.execute(insert_sql, way.insert_tuple())
         for i in way.tags.items():
@@ -314,13 +327,21 @@ def way_iter():
     cursor = _connection.execute(_select_sql('osm_way', osm.way.way_fields[0]))
     return (fields[0] for fields in cursor)
 
-def relation_store(relation):
+def relation_store(relation, cursor = None):
     """
     Stores the given relation in the database.
     """
     insert_sql = _insert_sql('osm_relation', osm.relation.relation_fields)
     tag_insert_sql = _insert_sql('osm_relation_tag', ('rid', 'tid'))
     member_insert_sql = _insert_sql('osm_relation_member', ('rid', 'seq', 'role', 'type', 'ref'))
+    c = cursor
+    if c:
+        c.execute(insert_sql, relation.insert_tuple())
+        for i in relation.tags.items():
+            c.execute(tag_insert_sql, (relation.id, _getTagID(c, *i)))
+        for i in xrange(len(relation.members)):
+            mem = relation.members[i]
+            c.execute(member_insert_sql, (relation.id, i, mem.role, mem.type, mem.ref))
     with _trans(_connection) as c:
         c.execute(insert_sql, relation.insert_tuple())
         for i in relation.tags.items():
@@ -403,7 +424,7 @@ def node_way_retrieve(id):
     with _trans(_connection) as c:
         c.execute(select_sql, (id,))
         res = [r[0] for r in c]
-        if len(res) == 0 and not map_node_exists(id):
+        if len(res) == 0 or not map_node_exists(id):
             raise KeyError
         return res
 
@@ -435,8 +456,18 @@ def map_node_exists(id):
     """
     Return true if the given node is inside of a map bounding box.
     """
-    select_sql = """SELECT COUNT(osm_map.id) FROM osm_node, osm_map WHERE 
+    select_sql = """SELECT COUNT(osm_node.id) FROM osm_node, osm_map WHERE 
                     lat >= minlat AND lat <= maxlat AND lon >= minlon AND lon <= maxlon AND osm_node.id = ?;"""
+    cursor = _connection.execute(select_sql, (id,))
+    res = cursor.fetchone()
+    return res[0] > 0
+
+def map_node_close(id, threshold):
+    select_sql = """SELECT COUNT(osm_node.id) FROM osm_node, osm_map WHERE osm_node.id = ? AND 
+                    lat - minlat >= %f AND 
+                    lat - maxlat <= %f AND 
+                    lon - minlon >= %f AND 
+                    lon - maxlon <= %f;""" % (threshold, threshold, threshold, threshold)
     cursor = _connection.execute(select_sql, (id,))
     res = cursor.fetchone()
     return res[0] > 0
@@ -445,11 +476,12 @@ def data_store(dataList):
     """
     Store all Node, Way and Relation objects in dataList in the database.
     """
-    for item in dataList:
-        if isinstance(item, osm.node.Node):
-            node_store(item)
-        elif isinstance(item, osm.way.Way):
-            way_store(item)
-        elif isinstance(item, osm.relation.Relation):
-            relation_store(item)
+    with _trans(_connection) as c: 
+        for item in dataList:
+            if isinstance(item, osm.node.Node):
+                node_store(item, c)
+            elif isinstance(item, osm.way.Way):
+                way_store(item, c)
+            elif isinstance(item, osm.relation.Relation):
+                relation_store(item, c)
 

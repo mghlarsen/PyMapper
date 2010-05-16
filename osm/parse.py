@@ -60,7 +60,7 @@ class OsmDocumentHandler(xml.sax.handler.ContentHandler):
             if name == 'tag':
                 self.tags[attrs['k']] = attrs['v']
             elif name == 'member':
-                self.relationMembers.append((attrs['ref'], attrs['role'], attrs['type']))
+                self.relationMembers.append((attrs['role'], attrs['type'], attrs['ref']))
             else:
                 raise xml.sax.SAXException("Invalid tag '<%s>' in RELATION state." % (name, ))
         else:
@@ -87,7 +87,7 @@ class OsmDocumentHandler(xml.sax.handler.ContentHandler):
         elif self.state == 'WAY':
             if name == 'way':
                 self.state = 'BASE'
-                self.data.append(('WAY', self.wayAttrs, self.wayNodes, self.tags))
+                self.data.append(('WAY', self.wayAttrs, self.tags, self.wayNodes))
                 self.wayAttrs = None
                 self.wayNodes = None
                 self.tags = None
@@ -98,7 +98,7 @@ class OsmDocumentHandler(xml.sax.handler.ContentHandler):
         elif self.state == 'RELATION':
             if name == 'relation':
                 self.state = 'BASE'
-                self.data.append(('RELATION', self.relationAttrs, self.relationMembers, self.tags))
+                self.data.append(('RELATION', self.relationAttrs, self.tags, self.relationMembers))
                 self.relationAttrs = None
                 self.relationMembers = None
                 self.tags = None

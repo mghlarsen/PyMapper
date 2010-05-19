@@ -1,5 +1,4 @@
-
-from sqlalchemy import Table, Column, Integer, String, Float, DateTime, MetaData, ForeignKey, create_engine
+from sqlalchemy import Table, Column, Integer, String, Float, DateTime, Binary, MetaData, ForeignKey, create_engine
 from sqlalchemy.orm import relation, sessionmaker
 from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy.schema import PrimaryKeyConstraint
@@ -135,6 +134,24 @@ class Bounds(Base):
         self.maxlat = maxlat
         self.minlon = minlon
         self.maxlon = maxlon
+
+class Tile(Base):
+    __tablename__ = 'osm_map_tile'
+
+    zoom = Column(Integer, primary_key = True)
+    x = Column(Integer, primary_key = True)
+    y = Column(Integer, primary_key = True)
+    pngFilename = Column(String)
+
+    def __init__(self, zoom, x, y, pngFilename = None):
+        self.zoom = zoom
+        self.x = x
+        self.y = y
+        if png:
+            self.pngFilename = png
+        else:
+            self.pngFilename = osm.tile.get_png_filename(x, y, zoom)
+
 
 Base.metadata.create_all(engine)
 

@@ -38,6 +38,11 @@ def num2deg(xtile, ytile, zoom):
     lat_deg = math.degrees(lat_rad)
     return(lat_deg, lon_deg)
 
+def bounds(xtile, ytile, zoom):
+    maxLat, minLon = num2deg(xtile, ytile, zoom)
+    minLat, maxLon = num2deg(xtile + 1, ytile + 1, zoom)
+    return (minLat, maxLat, minLon, maxLat)
+
 def get_tile_png(xtile, ytile, zoom, url = TILEURL):
     if DEBUG:
         print url % locals()

@@ -4,7 +4,7 @@ from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy.schema import PrimaryKeyConstraint
 import osm.api
 import osm.parse
-
+import osm.tile
 
 engine = create_engine('sqlite:///osm2.db', echo = False)
 Session = sessionmaker(bind = engine)
@@ -147,11 +147,15 @@ class Tile(Base):
         self.zoom = zoom
         self.x = x
         self.y = y
-        if png:
-            self.pngFilename = png
+        if pngFilename:
+            self.pngFilename = pngFilename
         else:
             self.pngFilename = osm.tile.get_png_filename(x, y, zoom)
 
+    def bounds(self):
+        maxLat, minLon = osm.tile.num2deg(self.x, self.y, self.zoom)
+        minLat, maxLon = osm.tile.num2deg(self.x + 1, self.y + 1, self.zoom)
+        return (minLat, minLon, maxLat, maxLon)
 
 Base.metadata.create_all(engine)
 

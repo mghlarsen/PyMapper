@@ -18,11 +18,12 @@
 import math
 import os
 import os.path
+import osm.config
 from urllib2 import urlopen
 
-TILEDIR = "tiles"
-TILEURL = "http://tah.openstreetmap.org/Tiles/tile/%(zoom)d/%(xtile)d/%(ytile)d.png"
-DEBUG = False
+TILEDIR = osm.config.tile_dir()
+TILEURL = osm.config.tile_url()
+DEBUG = osm.config.debug()
 
 def deg2num(lat_deg, lon_deg, zoom):
     lat_rad = math.radians(lat_deg)

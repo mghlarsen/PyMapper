@@ -1,13 +1,14 @@
 from sqlalchemy import Table, Column, Integer, String, Float, DateTime, Binary, MetaData, ForeignKey, create_engine, and_
 from sqlalchemy.orm import relation, sessionmaker
 from sqlalchemy.ext.declarative import declarative_base
+import osm.config
 import osm.api
 import osm.parse
 import osm.tile
 
-OSM_MAP_GET_POINT_RANGE = 0.01
+MAP_POINT_RANGE = osm.config.map_point_range()
 
-engine = create_engine('sqlite:///osm2.db', echo = True)
+engine = create_engine(osm.config.db_connect_str(), echo = osm.config.db_echo_on())
 Session = sessionmaker(bind = engine)
 session = Session()
 Base = declarative_base()
@@ -279,10 +280,10 @@ def relation_get(target_id):
     raise KeyError
 
 def map_fetch_point(lat, lon):
-    minlat = lat - OSM_MAP_GET_POINT_RANGE
-    maxlat = lat + OSM_MAP_GET_POINT_RANGE
-    minlon = lon - OSM_MAP_GET_POINT_RANGE
-    maxlon = lon + OSM_MAP_GET_POINT_RANGE
+    minlat = lat - MAP_POINT_RANGE
+    maxlat = lat + MAP_POINT_RANGE
+    minlon = lon - MAP_POINT_RANGE
+    maxlon = lon + MAP_POINT_RANGE
     map_fetch(minlat, maxlat, minlon, maxlon)
     
     

@@ -1,4 +1,4 @@
-from sqlalchemy import Table, Column, Integer, String, Float, DateTime, Binary, MetaData, ForeignKey, create_engine, and_
+from sqlalchemy import Table, Column, Integer, String, Float, DateTime, Binary, MetaData, ForeignKey, create_engine, and_, or_
 from sqlalchemy.orm import relation, sessionmaker
 from sqlalchemy.ext.declarative import declarative_base
 import osm.config

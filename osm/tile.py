@@ -21,8 +21,8 @@ import os.path
 import osm.config
 from urllib2 import urlopen
 
-TILEDIR = osm.config.tile_dir()
-TILEURL = osm.config.tile_url()
+TILE_DIR = osm.config.tile_dir()
+TILE_URL = osm.config.tile_url() + "%(zoom)d/%(xtile)d/%(ytile)d.png"
 DEBUG = osm.config.debug()
 
 def deg2num(lat_deg, lon_deg, zoom):
@@ -44,18 +44,18 @@ def bounds(xtile, ytile, zoom):
     minLat, maxLon = num2deg(xtile + 1, ytile + 1, zoom)
     return (minLat, maxLat, minLon, maxLat)
 
-def get_tile_png(xtile, ytile, zoom, url = TILEURL):
+def get_tile_png(xtile, ytile, zoom, url = TILE_URL):
     if DEBUG:
         print url % locals()
     return urlopen(url % locals())
 
 def get_png_filename(xtile, ytile, zoom):
-    path = os.path.join(TILEDIR, str(zoom), str(xtile), "%s.png" %(ytile,))
+    path = os.path.join(TILE_DIR, str(zoom), str(xtile), "%s.png" %(ytile,))
     if os.path.exists(path):
         return path
     else:
         try:
-            os.makedirs(os.path.join(TILEDIR, str(zoom), str(xtile)))
+            os.makedirs(os.path.join(TILE_DIR, str(zoom), str(xtile)))
         except OSError as err:
             if err.errno == 17:
                 pass
@@ -65,4 +65,4 @@ def get_png_filename(xtile, ytile, zoom):
         targetfile = open(path, "wb")
         targetfile.writelines(pngfile)
         return path
-        
+

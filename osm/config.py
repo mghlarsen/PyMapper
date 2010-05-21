@@ -44,7 +44,7 @@ config.set('osm', 'map-point-range', '0.01')
 config.set('osm', 'api-server', 'www.openstreetmap.org')
 config.set('osm', 'api-ver', '0.6')
 config.set('osm', 'tile-dir', 'tiles')
-config.set('osm', 'tile-url', 'http://tah.openstreetmap.org/Tiles/tile/%(zoom)d/%(xtile)d/%(ytile)d.png')
+config.set('osm', 'tile-url', 'http://tah.openstreetmap.org/Tiles/tile/')
 config.read(_config_file)
 
 def debug():

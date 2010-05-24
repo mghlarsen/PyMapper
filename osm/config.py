@@ -48,26 +48,50 @@ config.set('osm', 'tile-url', 'http://tah.openstreetmap.org/Tiles/tile/')
 config.read(_config_file)
 
 def debug():
+    """
+    Returns True if debug mode is enabled.
+    """
     return bool(config.get('osm', 'debug'))
 
 def db_connect_str():
+    """
+    Returns the configured database connect string.
+    """
     return config.get('osm', 'db-connect-string')
 
-def db_echo_os():
+def db_echo_on():
+    """
+    Return True if database echo should be on.
+    """
     return bool(config.get('osm', 'db-echo-on'))
 
 def map_point_range():
+    """
+    Return the amount of padding to put around a point when doing a map fetch.
+    """
     return float(config.get('osm', 'map-point-range'))
 
 def osm_api_server():
+    """
+    Return the openstreetmap.org api server name.
+    """
     return config.get('osm', 'osm-api-server')
 
 def osm_api_ver():
+    """
+    Return the openstreetmap.org api version to use.
+    """
     return config.get('osm', 'osm-api-ver')
 
 def tile_dir():
+    """
+    Return the directory to store tile images in.
+    """
     return config.get('osm', 'tile-dir')
 
 def tile_url():
+    """
+    Return the url template for retrieving tile images.
+    """
     return config.get('osm', 'tile-url', raw=True)
 

@@ -18,9 +18,6 @@
 This module is responsible for fetching data from the server.
 
 By default fetching is done from www.openstreetmap.org with api version 0.6.
-Currently, Debug is enabled by default (and configuration isn't really
-implemented very flexibly, so you'll have to edit it here or override on each
-call.
 """
 import osm.config
 from urllib2 import urlopen

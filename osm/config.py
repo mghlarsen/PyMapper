@@ -75,13 +75,13 @@ def osm_api_server():
     """
     Return the openstreetmap.org api server name.
     """
-    return config.get('osm', 'osm-api-server')
+    return config.get('osm', 'api-server')
 
 def osm_api_ver():
     """
     Return the openstreetmap.org api version to use.
     """
-    return config.get('osm', 'osm-api-ver')
+    return config.get('osm', 'api-ver')
 
 def tile_dir():
     """

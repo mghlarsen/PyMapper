@@ -15,13 +15,13 @@
 ## You should have received a copy of the GNU General Public License     ##
 ## along with this program.  If not, see <http://www.gnu.org/licenses/>. ##
 
-import osm
+import osm.data
 import sys
 import math
 import Queue
 
 DEBUG = True
-MAX_ITER = 10000
+MAX_ITER = 100000
 
 def routeFind(src, dst, queue_max_size = 0):
     toAnalyze = Queue.PriorityQueue(queue_max_size)
@@ -39,17 +39,20 @@ def routeFind(src, dst, queue_max_size = 0):
         if curr in analyzed and currPathDist >= analyzed[curr]:
             print "analyzed[curr]:%f currPathDist:%f DROPPING" % (analyzed[curr], currPathDist)
             continue
-        currBearing = bearing(curr, dst)
-        print [n.id for n in curr.adjacent()]
-        for n in curr.adjacent():
+        print [n[2].id for n in curr.get_adjacent()]
+        for ntuple in curr.get_adjacent():
+            n = ntuple[2]
             nextDist = distance(curr, n)
             nextPathDist = currPathDist + nextDist
-            deltaBearing = diff_bearing(bearing(curr, n), currBearing)
-            nextEstDist = nextPathDist + (distance(n, dst) * (1 + (deltaBearing / (math.pi * 2))))
+            nextEstDist = nextPathDist + (1.1 * distance(n, dst)) 
             nextPath = path + [n]
             if DEBUG:
                 print "id:%d  est:%f  path:%f" % (n.id, nextEstDist, nextPathDist) 
-            toAnalyze.put((nextEstDist, n, nextPathDist, nextPath))
+            if n in analyzed and analyzed[n] <= nextPathDist:
+                if DEBUG:
+                    print "analyzed[n]:%f DROPPING" % (analyzed[n],)
+            else:
+                toAnalyze.put((nextEstDist, n, nextPathDist, nextPath))
         analyzed[curr] = currPathDist
     return ([], -1)
 
@@ -79,5 +82,6 @@ if __name__ == '__main__':
     if len(sys.argv) < 3:
         print usage
     else:
-        print routeFind(osm.nodes[int(sys.argv[1])], osm.nodes[int(sys.argv[2])])
-
+        res = routeFind(osm.data.node_get(int(sys.argv[1])), osm.data.node_get(int(sys.argv[2])))
+        print "Route distance: %f" % (res[1],)
+        print [n.id for n in res[0]]

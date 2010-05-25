@@ -50,16 +50,28 @@ class OsmDocumentHandler(xml.sax.handler.ContentHandler):
             elif name == 'node':
                 self.state = 'NODE'
                 self.tags = dict()
+                if not 'uid' in attrs:
+                    attrs = dict(attrs)
+                    attrs['uid'] = "-1"
+                    attrs['user'] = ""
                 self.nodeAttrs = attrs
             elif name == 'way':
                 self.state = 'WAY'
                 self.tags = dict()
                 self.wayNodes = list()
+                if not 'uid' in attrs:
+                    attrs = dict(attrs)
+                    attrs['uid'] = "-1"
+                    attrs['user'] = ""
                 self.wayAttrs = attrs
             elif name == 'relation':
                 self.state = 'RELATION'
                 self.tags = dict()
                 self.relationMembers = list()
+                if not 'uid' in attrs:
+                    attrs = dict(attrs)
+                    attrs['uid'] = "-1"
+                    attrs['user'] = ""
                 self.relationAttrs = attrs
             else:
                 raise xml.sax.SAXException("Invalid tag '<%s>' in BASE state." % (name, ))

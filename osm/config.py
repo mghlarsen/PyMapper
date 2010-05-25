@@ -47,11 +47,14 @@ config.set('osm', 'tile-dir', 'tiles')
 config.set('osm', 'tile-url', 'http://tah.openstreetmap.org/Tiles/tile/')
 config.read(_config_file)
 
+def boolean(s):
+    return s.lower() in ['on', 'true', 'yes']
+
 def debug():
     """
     Returns True if debug mode is enabled.
     """
-    return bool(config.get('osm', 'debug'))
+    return boolean(config.get('osm', 'debug'))
 
 def db_connect_str():
     """
@@ -63,7 +66,7 @@ def db_echo_on():
     """
     Return True if database echo should be on.
     """
-    return bool(config.get('osm', 'db-echo-on'))
+    return boolean(config.get('osm', 'db-echo-on'))
 
 def map_point_range():
     """

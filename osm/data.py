@@ -22,6 +22,7 @@ fetching of map data through the osm.api module.
 
 from sqlalchemy import Table, Column, Integer, String, Float, DateTime, Binary, MetaData, ForeignKey, create_engine, and_, or_
 from sqlalchemy.orm import relation, sessionmaker
+import sqlalchemy.orm.exc
 from sqlalchemy.ext.declarative import declarative_base
 import osm.config
 import osm.api
@@ -32,7 +33,7 @@ MAP_POINT_RANGE = osm.config.map_point_range()
 
 engine = create_engine(osm.config.db_connect_str(), echo = osm.config.db_echo_on())
 Session = sessionmaker(bind = engine)
-session = Session()
+session = Session(autoflush = True)
 Base = declarative_base()
 
 node_tags = Table('osm_node_tag', Base.metadata, Column('nid', Integer, ForeignKey('osm_node.id')),
@@ -42,9 +43,27 @@ way_tags = Table('osm_way_tag', Base.metadata, Column('wid', Integer, ForeignKey
 relation_tags = Table('osm_relation_tag', Base.metadata, Column('rid', Integer, ForeignKey('osm_relation.id')),
                                                          Column('tid', Integer, ForeignKey('osm_tag.id')))
 
-way_nodes = Table('osm_way_node', Base.metadata, Column('wid', Integer, ForeignKey('osm_way.id'), primary_key = True),
-                                                 Column('seq', Integer, primary_key = True),
-                                                 Column('nid', Integer, ForeignKey('osm_node.id')))
+class WayNode(Base):
+    __tablename__ = 'osm_way_node'
+
+    wid = Column(Integer, ForeignKey('osm_way.id'), primary_key = True)
+    seq = Column(Integer, primary_key = True)
+    nid = Column(Integer, ForeignKey('osm_node.id'))
+
+    def __init__(self, wid, seq, nid):
+        self.wid = wid
+        self.seq = seq
+        self.nid = nid
+
+def WayNode_get(wid, seq, nid, s = session):
+    try:
+        res = s.query(WayNode).filter_by(wid=wid,seq=seq).one()
+        res.nid = nid
+        return res
+    except sqlalchemy.orm.exc.NoResultFound:
+        return WayNode(wid, seq, nid)
+
+
 class Member(Base):
     __tablename__ = 'osm_relation_member'
     
@@ -70,6 +89,16 @@ class Member(Base):
         self.type = type
         self.ref = ref
 
+def Member_get(rid, seq, role, type, ref, s = session):
+    try:
+        res = s.query(Member).filter_by(rid = rid, seq = seq).one()
+        res.role = role
+        res.type = type
+        res.ref = ref
+        return res
+    except sqlalchemy.orm.exc.NoResultFound:
+        return Member(rid, seq, role, type, ref)
+
 class Tag(Base):
     __tablename__ = 'osm_tag'
 
@@ -80,6 +109,12 @@ class Tag(Base):
     def __init__(self, key, value):
         self.key = key
         self.value = value
+
+def Tag_get(k, v, s = session):
+    try:
+        return s.query(Tag).filter_by(key=k, value=v).first()
+    except sqlalchemy.orm.exc.NoResultFound:
+        return Tag(k, v)
 
 class Node(Base):
     __tablename__ = 'osm_node'
@@ -92,17 +127,17 @@ class Node(Base):
     uid = Column(Integer)
     user = Column(String)
     tags = relation(Tag, secondary = node_tags, backref = 'osm_node')
-    ways = relation('Way', secondary = way_nodes, order_by = way_nodes.c.wid)
+    ways = relation('Way', secondary = WayNode.__table__, order_by = WayNode.wid)
 
-    def in_bounds(self):
-        return session.query(Bounds, Node).filter(and_(Node.id == self.id,
-                                                       Bounds.minlat <= Node.lat,
-                                                       Bounds.maxlat >= Node.lat,
-                                                       Bounds.minlon <= Node.lon,
-                                                       Bounds.maxlon >= Node.lon)).count()
+    def in_bounds(self, s = session):
+        return s.query(Bounds, Node).filter(and_(Node.id == self.id,
+                                                 Bounds.minlat <= Node.lat,
+                                                 Bounds.maxlat >= Node.lat,
+                                                 Bounds.minlon <= Node.lon,
+                                                 Bounds.maxlon >= Node.lon)).count()
 
-    def get_adjacent(self):
-        if not self.in_bounds():
+    def get_adjacent(self, s = session):
+        if not self.in_bounds(s):
             self.do_map_data_fetch()
 
         waySpots = []
@@ -128,9 +163,9 @@ class Node(Base):
                 nodes.append((way, 1, way.nodes[idx + 1]))
         return nodes
 
-    def do_map_data_fetch(self):
+    def do_map_data_fetch(self, s = session):
         map_fetch_point(self.lat, self.lon)
-        assert self.in_bounds()
+        assert self.in_bounds(s)
 
     def __init__(self, id, lat, lon, version, changeset, uid, user, tags):
         self.id = id
@@ -151,7 +186,8 @@ class Way(Base):
     uid = Column(Integer)
     user = Column(String)
     tags = relation(Tag, secondary = way_tags, backref = 'osm_way')
-    nodes = relation(Node, secondary = way_nodes, order_by = way_nodes.c.seq)
+    nodes = relation(Node, secondary = WayNode.__table__, order_by = WayNode.seq)
+    wn = relation(WayNode)
 
     def __init__(self, id, version, changeset, uid, user, tags, nodes):
         self.id = id
@@ -160,7 +196,8 @@ class Way(Base):
         self.uid = uid
         self.user = user
         self.tags = tags
-        self.nodes = nodes
+        self.wn = nodes
+
 
 class Relation(Base):
     __tablename__ = 'osm_relation'
@@ -223,43 +260,79 @@ class Tile(Base):
 
 Base.metadata.create_all(engine)
 
-def data_store(data):
+def data_store(data, s = session):
     objs = list()
     for d in data:
         o = None
         if d[0] == 'BOUNDS':
             a = d[1]
-            o = Bounds(None, float(a['minlat']), float(a['maxlat']), float(a['minlon']), float(a['maxlon']))
+            bList = s.query(Bounds).filter_by(minlat = float(a['minlat']),
+                                              maxlat = float(a['maxlat']),
+                                              minlon = float(a['minlon']),
+                                              maxlon = float(a['maxlon'])).all()
+            if len(bList):
+                o = bList[0]
+            else:
+                o = Bounds(None, float(a['minlat']), float(a['maxlat']), float(a['minlon']), float(a['maxlon']))
         elif d[0] == 'NODE':
             a = d[1]
-            o = Node(int(a['id']), float(a['lat']), float(a['lon']),
-                     int(a['version']), int(a['changeset']),
-                     int(a['uid']), a['user'],
-                     [Tag(*tag) for tag in d[2].items()])
+            if s.query(Node).filter_by(id = int(a['id'])).count() > 0:
+                o = s.query(Node).filter_by(id = int(a['id'])).one()
+                o.lat = float(a['lat'])
+                o.lon = float(a['lon'])
+                o.version = int(a['version'])
+                o.changeset = int(a['changeset'])
+                o.uid = int(a['uid'])
+                o.user = a['user']
+                o.tags = [Tag_get(tag[0], tag[1], s) for tag in d[2].items()]
+            else:
+                o = Node(int(a['id']), float(a['lat']), float(a['lon']),
+                         int(a['version']), int(a['changeset']),
+                         int(a['uid']), a['user'],
+                         [Tag_get(tag[0], tag[1], s) for tag in d[2].items()])
             for t in o.tags:
-                session.add(t)
+                s.add(t)
         elif d[0] == 'WAY':
             a = d[1]
-            o = Way(int(a['id']), int(a['version']), int(a['changeset']),
-                    int(a['uid']), a['user'],
-                    [Tag(*tag) for tag in d[2].items()],
-                    [WayNode(a['id'], i, int(d[3][i])) for i in range(len(d[3]))])
+            if s.query(Way).filter_by(id = int(a['id'])).count() > 0:
+                o = s.query(Way).filter_by(id = int(a['id'])).one()
+                o.version = int(a['version'])
+                o.changeset = int(a['changeset'])
+                o.uid = int(a['uid'])
+                o.user = a['user']
+                o.tags = [Tag_get(tag[0], tag[1], s) for tag in d[2].items()]
+                o.wn = [WayNode_get(a['id'], i, int(d[3][i]), s) for i in range(len(d[3]))]
+            else:
+                o = Way(int(a['id']), int(a['version']), int(a['changeset']),
+                        int(a['uid']), a['user'],
+                        [Tag_get(tag[0], tag[1], s) for tag in d[2].items()],
+                        [WayNode(a['id'], i, int(d[3][i])) for i in range(len(d[3]))])
             for t in o.tags:
-                session.add(t)
+                s.add(t)
             for wn in o.nodes:
-                session.add(wn)
+                s.add(wn)
         elif d[0] == 'RELATION':
             a = d[1]
-            o = Relation(int(a['id']), int(a['version']), int(a['changeset']),
-                         int(a['uid']), a['user'],
-                         [Tag(*tag) for tag in d[2].items()],
-                         [Member(int(a['id']), i, d[3][i][0], d[3][i][1], int(d[3][i][2])) for i in range(len(d[3]))])
+            if s.query(Relation).filter_by(id = int(a['id'])).count() > 0:
+                o = s.query(Relation).filter_by(id = int(a['id'])).one()
+                o.version = int(a['version'])
+                o.changeset = int(a['changeset'])
+                o.uid = int(a['uid'])
+                o.user = a['user']
+                o.tags = [Tag_get(tag[0], tag[1], s) for tag in d[2].items()]
+                o.members = [Member_get(int(a['id']), i, d[3][i][0], d[3][i][1], int(d[3][i][2]),s) for i in range(len(d[3]))]
+            else:
+                o = Relation(int(a['id']), int(a['version']), int(a['changeset']),
+                            int(a['uid']), a['user'],
+                            [Tag_get(tag[0], tag[1], s) for tag in d[2].items()],
+                            [Member(int(a['id']), i, d[3][i][0], d[3][i][1], int(d[3][i][2])) for i in range(len(d[3]))])
             for t in o.tags:
-                session.add(t)
+                s.add(t)
             for m in o.members:
-                session.add(m)
+                s.add(m)
         objs.append(o)
-        session.add(o)
+        s.add(o)
+    s.commit()
     return objs
 
 def node_get(target_id):
@@ -310,19 +383,20 @@ def map_fetch_point(lat, lon):
     
     
 def map_fetch(minLat, maxLat, minLon, maxLon):
-    minLatBounds = and_(Bounds.minlat < minlat, Bounds.maxlat > minlat)
-    maxLatBounds = and_(Bounds.minlat < maxlat, Bounds.maxlat > maxlat)
-    minLonBounds = and_(Bounds.minlon < minlon, Bounds.maxlon > minlon)
-    maxLonBounds = and_(Bounds.minlon < maxlon, Bounds.maxlon > maxlon)
+    s = Session(autoflush = False)
+    minLatBounds = and_(Bounds.minlat < minLat, Bounds.maxlat > minLat)
+    maxLatBounds = and_(Bounds.minlat < maxLat, Bounds.maxlat > maxLat)
+    minLonBounds = and_(Bounds.minlon < minLon, Bounds.maxlon > minLon)
+    maxLonBounds = and_(Bounds.minlon < maxLon, Bounds.maxlon > maxLon)
 
     overlaps = session.query(Bounds).filter(or_(and_(minLatBounds, minLonBounds),
                                                 and_(minLatBounds, maxLonBounds),
                                                 and_(maxLatBounds, minLonBounds),
                                                 and_(maxLatBounds, maxLonBounds))).all()
-    newMinLat = minlat
+    newMinLat = minLat
     newMaxLat = maxLat
-    newMinLon = minlon
-    newMaxLon = maxlon
+    newMinLon = minLon
+    newMaxLon = maxLon
     for b in overlaps:
         if b.minlat < newMinLat and b.maxlat > newMinLat:
             if b.minlon < newMinLon and b.maxlon > newMinLon:
@@ -356,6 +430,6 @@ def map_fetch(minLat, maxLat, minLon, maxLon):
     maxlon = newMaxLon
     xmldata = osm.api.map_get(minLat, maxLat, minLon, maxLon)
     data = osm.parse.parse(xmldata)
-    objs = data_store(data)
-    session.commit()
+    objs = data_store(data, s)
+    s.commit()
 

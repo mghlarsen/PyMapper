@@ -111,10 +111,11 @@ class Tag(Base):
         self.value = value
 
 def Tag_get(k, v, s = session):
-    try:
-        return s.query(Tag).filter_by(key=k, value=v).first()
-    except sqlalchemy.orm.exc.NoResultFound:
+    res = s.query(Tag).filter_by(key=k, value=v).first()
+    if res == None:
         return Tag(k, v)
+    else:
+        return res
 
 class Node(Base):
     __tablename__ = 'osm_node'

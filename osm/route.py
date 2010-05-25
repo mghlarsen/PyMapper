@@ -24,7 +24,7 @@ import threading
 
 
 DEBUG = True
-MAX_ITER = 100000
+MAX_ITER = 10000
 
 class RouteFinder:
     def __init__(self, origin, destination, filters = [], max_iter = MAX_ITER):
@@ -41,22 +41,41 @@ class RouteFinder:
     
     def _next_iter(self, node, pathDist):
         with self._stateLock:
+            if node in self._checked:
+                print "checked: %f, pathDist: %f" % (self._checked[node], pathDist)
             assert (not node in self._checked) or (self._checked[node] >= pathDist)
             self._checked[node] = pathDist
             self._iterations_done += 1
             print self._iterations_done
             if self._iterations_done == self._max_iter:
-                return None
-            if len(self._results):
+                print "Hit max iterations, flushing queue."
+                while not self._toCheck.empty():
+                    self._toCheck.get()
+                    self._toCheck.task_done()
                 return None
         self._toCheck.task_done()
         return self._toCheck.get()
+
+    def _next_iter_short(self):
+        with self._stateLock:
+            self._iterations_done += 1
+            print self._iterations_done
+            if self._iterations_done == self._max_iter:
+                print "Hit max iterations, flushing queue."
+                while not self._toCheck.empty():
+                    self._toCheck.get()
+                    self._toCheck.task_done()
+                return None
+        self._toCheck.task_done()
+        return self._toCheck.get()
+        
 
     def _add_new(self, estDist, node, pathDist, path):
         self._toCheck.put((estDist, node, pathDist, path))
 
     def _add_result(self, distance, path):
         with self._stateLock:
+            print "Result: %f %s" % (distance, path)
             self._results.append((distance, path))
             self._results.sort()
 
@@ -70,12 +89,15 @@ class RouteFinder:
 
     def best_result(self):
         with self._stateLock:
-            return self._results[0]
+            if len(self._results):
+                return self._results[0]
+            return None
+
+    def join(self):
+        self._toCheck().join()
 
     def search(self):
-        print "Getting initial frame"
         frame = self._toCheck.get()
-        print "Got initial frame"
         while frame:
             estDist, curr, currPathDist, path = frame
 
@@ -83,7 +105,12 @@ class RouteFinder:
                 self._add_result(currPathDist, path)
 
             checkedDist = self._get_checked(curr)
-            if not checkedDist or checkedDist > currPathDist:
+            bestDist = self.best_result()
+            if checkedDist != None and checkedDist < currPathDist:
+                frame = self._next_iter_short()
+            elif bestDist != None and bestDist[0] <= currPathDist:
+                frame = self._next_iter_short()
+            else:
                 for nTuple in curr.get_adjacent():
                     n = nTuple[2]
                     nextDist = distance(curr, n)
@@ -91,21 +118,22 @@ class RouteFinder:
                     nextEstDist = nextPathDist + (1.1 * distance(n, self.destination))
                     nextPath = path + [n]
 
+                    if bestDist != None and bestDist[0] < nextPathDist + distance(n, self.destination):
+                        continue
+
                     nextCheckedDist = self._get_checked(n)
-                    if not nextCheckedDist or nextCheckedDist > nextPathDist:
-                        self._add_new(nextEstDist, n, nextPathDist, nextPath)
+                    if nextCheckedDist != None and nextCheckedDist < nextPathDist:
+                        continue
+                    
+                    self._add_new(nextEstDist, n, nextPathDist, nextPath)
                 
                 frame = self._next_iter(curr, currPathDist)
-            else:
-                self._toCheck.task_done()
-                frame = self._toCheck.get()
 
 def routeFind(src, dest, queue_max_size = 0):
-    print "Constructing RouteFinder"
     finder = RouteFinder(src, dest)
-    print "Starting Search"
-    finder.search()
-    print "Returning result"
+    
+    finder.search() 
+    
     return finder.best_result()
 
 

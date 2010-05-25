@@ -28,6 +28,7 @@ import osm.config
 import osm.api
 import osm.parse
 import osm.tile
+import threading
 
 MAP_POINT_RANGE = osm.config.map_point_range()
 
@@ -35,6 +36,8 @@ engine = create_engine(osm.config.db_connect_str(), echo = osm.config.db_echo_on
 Session = sessionmaker(bind = engine)
 session = Session(autoflush = True)
 Base = declarative_base()
+
+_map_api_lock = threading.Lock()
 
 node_tags = Table('osm_node_tag', Base.metadata, Column('nid', Integer, ForeignKey('osm_node.id')),
                                                  Column('tid', Integer, ForeignKey('osm_tag.id')))
@@ -165,7 +168,11 @@ class Node(Base):
         return nodes
 
     def do_map_data_fetch(self, s = session):
-        map_fetch_point(self.lat, self.lon)
+        with _map_api_lock:
+            # We want to double check here in case another thread grabbed the
+            # data we wanted while we were waiting on the lock.
+            if not self.in_bounds(s):
+                map_fetch_point(self.lat, self.lon)
         assert self.in_bounds(s)
 
     def __init__(self, id, lat, lon, version, changeset, uid, user, tags):
